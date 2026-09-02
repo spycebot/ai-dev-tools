@@ -1,0 +1,58 @@
+{% extends 'chores/base.html' %}
+
+{% block title %}Chores - Household Chore Manager{% endblock %}
+
+{% block content %}
+<div class="chore-section">
+    <h2>📝 Pending Chores</h2>
+    
+    {% if pending_chores %}
+        {% for chore in pending_chores %}
+            <div class="chore-item {{ chore.priority }}">
+                <div class="chore-content">
+                    <div class="chore-description">
+                        <span class="priority-badge {{ chore.priority }}">{{ chore.get_priority_display }}</span>
+                        {{ chore.description }}
+                    </div>
+                    <div class="chore-meta">
+                        Added on {{ chore.created_at|date:"M d, Y" }}
+                    </div>
+                </div>
+                <div class="chore-actions">
+                    <a href="{% url 'complete_chore' chore.id %}" class="btn btn-success">✓ Complete</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">✨</div>
+            <p>No pending chores! Everything is up to date.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="chore-section">
+    <h2>✅ Completed Chores</h2>
+    
+    {% if completed_chores %}
+        {% for chore in completed_chores %}
+            <div class="chore-item completed-chore">
+                <div class="chore-content">
+                    <div class="chore-description">
+                        <span class="priority-badge" style="background: #28a745; color: white;">Done</span>
+                        {{ chore.description }}
+                    </div>
+                    <div class="completed-info">
+                        Completed by <strong>{{ chore.completed_by }}</strong> on {{ chore.completed_at|date:"M d, Y at g:i A" }}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🎯</div>
+            <p>No completed chores yet. Start checking things off!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
