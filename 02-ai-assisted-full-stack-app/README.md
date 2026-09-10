@@ -12,11 +12,11 @@ This project is being built in five stages. Current progress:
 
 - [x] **1. Product specification** — see [`_docs/specs.md`](./_docs/specs.md)
 - [x] **2. Frontend prototype** (mocked backend) — in `frontend/`
-- [ ] **3. Backend** (FastAPI, mock data store)
+- [x] **3. Backend** (FastAPI, mock data store) — in `backend/`, contract in [`openapi.yaml`](./openapi.yaml)
 - [ ] **4. Connect frontend and backend**
 - [ ] **5. Database** (SQLite, SQLAlchemy)
 
-The backend does not exist yet — sections below covering it will be filled in as stages 3–5 land.
+The backend runs against an **in-memory mock store** (`backend/app/store.py`) — data lasts only as long as the process. Stage 4 wires the frontend to it (replacing the `localStorage` mock in `frontend/src/api/cards.js`); stage 5 replaces the in-memory store with a SQLAlchemy/SQLite one behind the same interface.
 
 ## Feature Summary
 
@@ -46,6 +46,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 02-ai-assisted-full-stack-app/
 ├── AGENTS.md          # Instructions for the AI coding agent building this project
 ├── README.md          # This file
+├── openapi.yaml       # REST contract between frontend and backend (source of truth)
 ├── _docs/
 │   └── specs.md       # Full product specification
 ├── frontend/          # React + Vite app (prototype, mocked backend)
@@ -55,30 +56,69 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 │       ├── App.jsx            # Board state, drag-and-drop wiring
 │       ├── App.css            # "Living paper" theme (layout + components)
 │       └── index.css          # Aged-paper background, fonts, color tokens
-└── backend/           # (to be added in stage 3) FastAPI app
+└── backend/           # FastAPI app (uv-managed)
+    ├── pyproject.toml         # Dependencies + pytest config
+    ├── app/
+    │   ├── main.py            # FastAPI app + routes (create_app factory)
+    │   ├── models.py          # Pydantic schemas (Card, CardCreate, CardUpdate, CardMove)
+    │   ├── store.py           # CardStore interface + InMemoryCardStore (mock)
+    │   └── seed.py            # Seed cards (mirrors the frontend's seed set)
+    └── tests/                 # pytest suite (written test-first)
 ```
 
 ## Installation
+
+**Frontend** (needs Node.js):
 
 ```bash
 cd frontend
 npm install
 ```
 
+**Backend** (needs [`uv`](https://docs.astral.sh/uv/) — install with `curl -LsSf https://astral.sh/uv/install.sh | sh`):
+
+```bash
+cd backend
+uv sync          # creates .venv and installs FastAPI + dev tools
+```
+
 ## Running the App
 
-The frontend is currently a **prototype with a mocked backend** — there is no real server yet. All "backend" calls are centralized in `frontend/src/api/cards.js`, which persists board state to the browser's `localStorage` so data survives a page refresh. This module is the only file that will need to change in stage 4 when it's swapped for real HTTP calls to the FastAPI backend.
+### Frontend
+
+The frontend is still a **prototype with a mocked backend**: all "backend" calls are centralized in `frontend/src/api/cards.js`, which persists board state to the browser's `localStorage`. Stage 4 replaces that one module with real HTTP calls to the FastAPI service below.
 
 ```bash
 cd frontend
-npm run dev
+npm run dev                       # http://localhost:5173
+npm run dev -- --host 0.0.0.0     # also reachable on the machine's IP
 ```
 
-This starts the Vite dev server at **http://localhost:5173**.
+### Backend
+
+```bash
+cd backend
+uv run uvicorn app.main:app --reload           # http://localhost:8000
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000   # reachable on the machine's IP
+```
+
+- Interactive API docs: **http://localhost:8000/docs**
+- Health check: **http://localhost:8000/health**
+- The API is served under `/api` (e.g. `GET /api/cards`); the full contract is in [`openapi.yaml`](./openapi.yaml).
+- The store is in-memory and re-seeds with four sample cards on every restart.
 
 ## Running Tests
 
-_Not yet available. Backend endpoints will be developed test-first (see `_docs/specs.md` §8); the test command will be documented here once the backend exists._
+**Backend** — the endpoints were built test-first (see [`_docs/specs.md`](./_docs/specs.md) §8):
+
+```bash
+cd backend
+uv run pytest
+```
+
+`tests/test_cards.py` covers create/read/update/delete/move behaviour and validation; `tests/test_openapi.py` asserts that `openapi.yaml` and the live app expose exactly the same set of operations.
+
+**Frontend** — interactivity is manually verified against the spec at each stage; no automated suite yet.
 
 ## Challenges & Notes
 
@@ -90,6 +130,9 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **Mocked backend is one module, by design.** `frontend/src/api/cards.js` is the single seam between the UI and "the backend." Every function returns a `Promise` and mirrors what a real REST call will look like, so stage 4 (connecting to FastAPI) should only require rewriting that one file, not the components that call it.
 - **dnd-kit's `useSortable` spreads `role="button"` onto the draggable element.** This meant a naive "click the element containing this text" test helper matched the outer card instead of the inner clickable content during manual browser verification. Not an app bug, but worth knowing if you write UI tests against these cards — target `.card-content` specifically, not the card root.
 - **`crypto.randomUUID()` needs a secure context.** The mock backend seeded card IDs with `crypto.randomUUID()`, which the browser only exposes over HTTPS or on `localhost`. Serving the dev app from a bare server IP over plain HTTP (`http://<ip>:5173`) left `crypto.randomUUID` undefined, so seeding threw and — because the initial `getCards()` call had no `.catch()` — the app hung forever on "Loading Card Catalog…". Fixed by giving `uuid()` a `crypto.getRandomValues` fallback and adding `.catch()`/`.finally()` to the load call so failures surface as an error banner instead of an infinite spinner.
+- **`uv` had to be installed for stage 3.** The spec mandates `uv` for the Python backend but it wasn't on the box; installed via `curl -LsSf https://astral.sh/uv/install.sh | sh` (lands in `~/.local/bin`). The backend is a non-packaged uv project (no `[build-system]` in `pyproject.toml`), so `uv sync` just builds a `.venv`; `pythonpath = ["."]` in the pytest config makes `import app` work without an editable install.
+- **`move` returns the whole board, not one card.** Reordering shifts the `position` of every card it passes, so `POST /api/cards/{id}/move` responds with the full re-sequenced list (matching the frontend mock's `moveCard`). The plain `PATCH` endpoint deliberately rejects a `column` field (`extra="forbid"`) to keep "edit fields" and "move" as separate operations.
+- **Starlette's `TestClient` prints an httpx deprecation warning.** Recent Starlette nudges toward an `httpx2` package that isn't released yet; the warning is cosmetic and the tests pass. Left as-is rather than pinning older Starlette.
 
 ## Course Context
 

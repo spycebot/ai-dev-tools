@@ -1,0 +1,281 @@
+openapi: 3.1.0
+info:
+  title: Card Catalog API
+  version: 0.1.0
+  summary: REST API for the Card Catalog mini Kanban board.
+  description: |
+    Contract between the Card Catalog frontend and the FastAPI backend.
+
+    One board, three fixed columns (`todo`, `in_progress`, `done`). Single
+    user, no authentication. This file is the source of truth for the
+    request/response shapes; the backend is built to match it and a test
+    (`backend/tests/test_openapi.py`) keeps the two in sync.
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+tags:
+  - name: cards
+  - name: meta
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      tags: [meta]
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    const: ok
+                required: [status]
+  /api/cards:
+    get:
+      operationId: listCards
+      tags: [cards]
+      summary: List all cards
+      description: >
+        Returns every card, ordered by column (todo, in_progress, done) then
+        by position ascending.
+      responses:
+        "200":
+          description: The full card list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Card"
+    post:
+      operationId: createCard
+      tags: [cards]
+      summary: Create a card
+      description: >
+        Creates a card appended to the end of its column. Only `title` is
+        required; other fields fall back to their defaults.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardCreate"
+      responses:
+        "201":
+          description: The created card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /api/cards/{card_id}:
+    parameters:
+      - $ref: "#/components/parameters/CardId"
+    get:
+      operationId: getCard
+      tags: [cards]
+      summary: Get a single card
+      responses:
+        "200":
+          description: The card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateCard
+      tags: [cards]
+      summary: Update a card's editable fields
+      description: |
+        Partial update of `title`, `description`, `due_date`, or `priority`.
+        Omitted fields are left unchanged; sending `due_date: null` clears it.
+        Moving a card between columns or reordering within one is done through
+        the move endpoint, not here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardUpdate"
+      responses:
+        "200":
+          description: The updated card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      operationId: deleteCard
+      tags: [cards]
+      summary: Permanently delete a card
+      description: >
+        Hard delete. Positions of the remaining cards in that column are
+        re-sequenced to stay contiguous.
+      responses:
+        "204":
+          description: The card was deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/cards/{card_id}/move:
+    parameters:
+      - $ref: "#/components/parameters/CardId"
+    post:
+      operationId: moveCard
+      tags: [cards]
+      summary: Move or reorder a card
+      description: |
+        Places the card at `position` within `column`, shifting the cards
+        around it. Works both for moving between columns and for reordering
+        within a column. A `position` past the end of the column appends.
+        Returns the full, freshly-ordered card list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardMove"
+      responses:
+        "200":
+          description: The full card list after the move
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Card"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+components:
+  parameters:
+    CardId:
+      name: card_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    NotFound:
+      description: No card with that id
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ValidationError:
+      description: The request failed validation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Priority:
+      type: string
+      enum: [low, medium, high]
+      default: medium
+    Column:
+      type: string
+      enum: [todo, in_progress, done]
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        due_date:
+          type: [string, "null"]
+          format: date
+        priority:
+          $ref: "#/components/schemas/Priority"
+        column:
+          $ref: "#/components/schemas/Column"
+        position:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - description
+        - due_date
+        - priority
+        - column
+        - position
+        - created_at
+        - updated_at
+    CardCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          default: ""
+        due_date:
+          type: [string, "null"]
+          format: date
+          default: null
+        priority:
+          $ref: "#/components/schemas/Priority"
+        column:
+          allOf:
+            - $ref: "#/components/schemas/Column"
+          default: todo
+      required: [title]
+    CardUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        due_date:
+          type: [string, "null"]
+          format: date
+        priority:
+          $ref: "#/components/schemas/Priority"
+    CardMove:
+      type: object
+      additionalProperties: false
+      properties:
+        column:
+          $ref: "#/components/schemas/Column"
+        position:
+          type: integer
+          minimum: 0
+      required: [column, position]
+    Error:
+      type: object
+      properties:
+        detail:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+      required: [detail]

@@ -10,6 +10,12 @@ lerna-debug.log*
 # Python bytecode
 __pycache__/
 *.py[cod]
+
+# Python / uv virtual environments and caches (uv.lock is committed)
+.venv/
+.pytest_cache/
+.ruff_cache/
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
