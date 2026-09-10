@@ -11,12 +11,12 @@ The full product specification lives at [`_docs/specs.md`](./_docs/specs.md). Re
 This project is being built in five stages. Current progress:
 
 - [x] **1. Product specification** — see [`_docs/specs.md`](./_docs/specs.md)
-- [ ] **2. Frontend prototype** (mocked backend)
+- [x] **2. Frontend prototype** (mocked backend) — in `frontend/`
 - [ ] **3. Backend** (FastAPI, mock data store)
 - [ ] **4. Connect frontend and backend**
 - [ ] **5. Database** (SQLite, SQLAlchemy)
 
-Sections below (installation, operation) will be filled in as each stage is completed — right now there is no runnable code yet, only the specification.
+The backend does not exist yet — sections below covering it will be filled in as stages 3–5 land.
 
 ## Feature Summary
 
@@ -48,17 +48,33 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── README.md          # This file
 ├── _docs/
 │   └── specs.md       # Full product specification
-├── frontend/          # (to be added in stage 2) React + Vite app
+├── frontend/          # React + Vite app (prototype, mocked backend)
+│   └── src/
+│       ├── api/cards.js       # Centralized mock "backend" (localStorage-backed)
+│       ├── components/        # Column, CardItem, CardEditor
+│       ├── App.jsx            # Board state, drag-and-drop wiring
+│       ├── App.css            # "Living paper" theme (layout + components)
+│       └── index.css          # Aged-paper background, fonts, color tokens
 └── backend/           # (to be added in stage 3) FastAPI app
 ```
 
 ## Installation
 
-_Not yet available — the frontend and backend have not been implemented yet. This section will be updated with `npm install` / `uv sync` style instructions once those stages are complete._
+```bash
+cd frontend
+npm install
+```
 
 ## Running the App
 
-_Not yet available. This section will document the frontend dev server command and the backend server command once stages 2–4 are complete, along with which URL the frontend uses to reach the backend._
+The frontend is currently a **prototype with a mocked backend** — there is no real server yet. All "backend" calls are centralized in `frontend/src/api/cards.js`, which persists board state to the browser's `localStorage` so data survives a page refresh. This module is the only file that will need to change in stage 4 when it's swapped for real HTTP calls to the FastAPI backend.
+
+```bash
+cd frontend
+npm run dev
+```
+
+This starts the Vite dev server at **http://localhost:5173**.
 
 ## Running Tests
 
@@ -71,6 +87,8 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **Git lives one level up.** This project's `.git` repository and `.gitignore` live in the parent directory (`/var/www/terzotech.net/ai-dev-tools/`), not in this folder. All git operations (status, add, commit, push) for this project are run from, or relative to, that parent directory rather than from `02-ai-assisted-full-stack-app/` itself.
 - **AGENTS.md takes precedence over the published homework instructions** where the two differ (for example, the homework assumes `.gitignore`/`.git` live inside the project folder — here they live in the parent repo instead).
 - **Spec-first workflow.** Before any code was written, the product specification was developed interactively (feature scope, data model, interaction choices, and the app name "Card Catalog" were all decided through a Q&A session) and captured in `_docs/specs.md`, per the course's spec-first methodology.
+- **Mocked backend is one module, by design.** `frontend/src/api/cards.js` is the single seam between the UI and "the backend." Every function returns a `Promise` and mirrors what a real REST call will look like, so stage 4 (connecting to FastAPI) should only require rewriting that one file, not the components that call it.
+- **dnd-kit's `useSortable` spreads `role="button"` onto the draggable element.** This meant a naive "click the element containing this text" test helper matched the outer card instead of the inner clickable content during manual browser verification. Not an app bug, but worth knowing if you write UI tests against these cards — target `.card-content` specifically, not the card root.
 
 ## Course Context
 
