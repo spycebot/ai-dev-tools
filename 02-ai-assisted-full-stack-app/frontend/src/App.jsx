@@ -22,10 +22,16 @@ export default function App() {
   );
 
   useEffect(() => {
-    getCards().then((data) => {
-      setCards(data);
-      setLoading(false);
-    });
+    getCards()
+      .then((data) => {
+        setCards(data);
+      })
+      .catch(() => {
+        setError("Couldn't load the board. Please refresh to try again.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const columns = useMemo(() => {
