@@ -85,26 +85,42 @@ export default function App() {
     try {
       const updated = await moveCard(active.id, { column: destColumn, position: destIndex });
       setCards(updated);
-    } catch {
-      setError("Couldn't save that move. Please try again.");
+    } catch (err) {
+      setError(err.message ?? "Couldn't save that move. Please try again.");
+      // Re-sync with the server so the board doesn't keep the failed optimistic move.
+      getCards().then(setCards).catch(() => {});
     }
   }
 
   async function handleCreate(values) {
-    const card = await createCard(values);
-    setCards((prev) => [...prev, card]);
-    setEditing(null);
+    try {
+      const card = await createCard(values);
+      setCards((prev) => [...prev, card]);
+      setEditing(null);
+    } catch (err) {
+      setError(err.message ?? "Couldn't create that card.");
+      throw err; // keep the editor open so the user doesn't lose their input
+    }
   }
 
   async function handleUpdate(id, values) {
-    const updated = await updateCard(id, values);
-    setCards((prev) => prev.map((c) => (c.id === id ? updated : c)));
-    setEditing(null);
+    try {
+      const updated = await updateCard(id, values);
+      setCards((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      setEditing(null);
+    } catch (err) {
+      setError(err.message ?? "Couldn't save that card.");
+      throw err;
+    }
   }
 
   async function handleDelete(id) {
-    await deleteCard(id);
-    setCards((prev) => prev.filter((c) => c.id !== id));
+    try {
+      await deleteCard(id);
+      setCards((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      setError(err.message ?? "Couldn't delete that card.");
+    }
   }
 
   if (loading) {

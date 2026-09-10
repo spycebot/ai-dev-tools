@@ -26,6 +26,9 @@ export default function CardEditor({ mode, card, defaultColumn, onCancel, onSubm
         priority,
         ...(mode === "create" ? { column: defaultColumn } : {}),
       });
+    } catch {
+      // The parent surfaces the error in the board's error banner; keep this
+      // form open so the user's input isn't lost.
     } finally {
       setSubmitting(false);
     }

@@ -13,10 +13,10 @@ This project is being built in five stages. Current progress:
 - [x] **1. Product specification** — see [`_docs/specs.md`](./_docs/specs.md)
 - [x] **2. Frontend prototype** (mocked backend) — in `frontend/`
 - [x] **3. Backend** (FastAPI, mock data store) — in `backend/`, contract in [`openapi.yaml`](./openapi.yaml)
-- [ ] **4. Connect frontend and backend**
+- [x] **4. Connect frontend and backend** — `frontend/src/api/cards.js` now makes real HTTP calls, proxied to the backend by Vite
 - [ ] **5. Database** (SQLite, SQLAlchemy)
 
-The backend runs against an **in-memory mock store** (`backend/app/store.py`) — data lasts only as long as the process. Stage 4 wires the frontend to it (replacing the `localStorage` mock in `frontend/src/api/cards.js`); stage 5 replaces the in-memory store with a SQLAlchemy/SQLite one behind the same interface.
+The frontend now talks to the real FastAPI backend, which still runs against an **in-memory mock store** (`backend/app/store.py`) — data lasts only as long as the backend process. Stage 5 replaces that store with a SQLAlchemy/SQLite one behind the same interface. **Both servers must be running** (see [Running the App](#running-the-app)).
 
 ## Feature Summary
 
@@ -49,9 +49,11 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── openapi.yaml       # REST contract between frontend and backend (source of truth)
 ├── _docs/
 │   └── specs.md       # Full product specification
-├── frontend/          # React + Vite app (prototype, mocked backend)
+├── frontend/          # React + Vite app
+│   ├── vite.config.js        # Dev server + /api → backend proxy
+│   ├── .env.example          # VITE_BACKEND_URL (proxy target) override
 │   └── src/
-│       ├── api/cards.js       # Centralized mock "backend" (localStorage-backed)
+│       ├── api/cards.js       # The only module that talks to the backend (fetch)
 │       ├── components/        # Column, CardItem, CardEditor
 │       ├── App.jsx            # Board state, drag-and-drop wiring
 │       ├── App.css            # "Living paper" theme (layout + components)
@@ -84,28 +86,35 @@ uv sync          # creates .venv and installs FastAPI + dev tools
 
 ## Running the App
 
-### Frontend
+The app needs **both** servers running: the FastAPI backend and the Vite dev
+server. The frontend calls a relative `/api/*` path; Vite proxies that to the
+backend (`vite.config.js`), so the browser only ever makes same-origin requests
+and there is no CORS to configure.
 
-The frontend is still a **prototype with a mocked backend**: all "backend" calls are centralized in `frontend/src/api/cards.js`, which persists board state to the browser's `localStorage`. Stage 4 replaces that one module with real HTTP calls to the FastAPI service below.
-
-```bash
-cd frontend
-npm run dev                       # http://localhost:5173
-npm run dev -- --host 0.0.0.0     # also reachable on the machine's IP
-```
-
-### Backend
+### 1. Backend (start this first)
 
 ```bash
 cd backend
-uv run uvicorn app.main:app --reload           # http://localhost:8000
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000   # reachable on the machine's IP
+uv run uvicorn app.main:app --reload                      # http://localhost:8000
+# or, to reach it directly on the machine's IP:
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 - Interactive API docs: **http://localhost:8000/docs**
 - Health check: **http://localhost:8000/health**
 - The API is served under `/api` (e.g. `GET /api/cards`); the full contract is in [`openapi.yaml`](./openapi.yaml).
 - The store is in-memory and re-seeds with four sample cards on every restart.
+
+### 2. Frontend
+
+```bash
+cd frontend
+npm run dev        # http://localhost:5173 (also binds 0.0.0.0, so the IP works too)
+```
+
+If the backend is not on `http://localhost:8000`, copy `frontend/.env.example`
+to `frontend/.env` and set `VITE_BACKEND_URL`. Restart the dev server after
+changing `vite.config.js` or `.env` — Vite only reads them at startup.
 
 ## Running Tests
 
@@ -128,6 +137,8 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **AGENTS.md takes precedence over the published homework instructions** where the two differ (for example, the homework assumes `.gitignore`/`.git` live inside the project folder — here they live in the parent repo instead).
 - **Spec-first workflow.** Before any code was written, the product specification was developed interactively (feature scope, data model, interaction choices, and the app name "Card Catalog" were all decided through a Q&A session) and captured in `_docs/specs.md`, per the course's spec-first methodology.
 - **Mocked backend is one module, by design.** `frontend/src/api/cards.js` is the single seam between the UI and "the backend." Every function returns a `Promise` and mirrors what a real REST call will look like, so stage 4 (connecting to FastAPI) should only require rewriting that one file, not the components that call it.
+- **Stage 4 held that line — mostly.** Swapping `cards.js` from `localStorage` to `fetch` needed no component changes: the mock had deliberately used the same field names (`due_date`, `column`, …) and return shapes as the API. The only other edits were additive: a `/api` proxy in `vite.config.js`, and wrapping the create/update/delete/move handlers in `App.jsx` (plus `CardEditor`'s submit) in `try/catch` so a backend error now shows in the board's error banner instead of becoming an unhandled promise rejection.
+- **Vite proxy instead of CORS.** The frontend calls a relative `/api/*` path and the Vite dev server proxies it to the backend. This keeps every browser request same-origin regardless of whether the app is opened on `localhost` or the server IP, so no CORS config is load-bearing (the backend still sends permissive CORS headers as a fallback). Trade-off: the dev server must be restarted to pick up `vite.config.js` / `.env` changes.
 - **dnd-kit's `useSortable` spreads `role="button"` onto the draggable element.** This meant a naive "click the element containing this text" test helper matched the outer card instead of the inner clickable content during manual browser verification. Not an app bug, but worth knowing if you write UI tests against these cards — target `.card-content` specifically, not the card root.
 - **`crypto.randomUUID()` needs a secure context.** The mock backend seeded card IDs with `crypto.randomUUID()`, which the browser only exposes over HTTPS or on `localhost`. Serving the dev app from a bare server IP over plain HTTP (`http://<ip>:5173`) left `crypto.randomUUID` undefined, so seeding threw and — because the initial `getCards()` call had no `.catch()` — the app hung forever on "Loading Card Catalog…". Fixed by giving `uuid()` a `crypto.getRandomValues` fallback and adding `.catch()`/`.finally()` to the load call so failures surface as an error banner instead of an infinite spinner.
 - **`uv` had to be installed for stage 3.** The spec mandates `uv` for the Python backend but it wasn't on the box; installed via `curl -LsSf https://astral.sh/uv/install.sh | sh` (lands in `~/.local/bin`). The backend is a non-packaged uv project (no `[build-system]` in `pyproject.toml`), so `uv sync` just builds a `.venv`; `pythonpath = ["."]` in the pytest config makes `import app` work without an editable install.
