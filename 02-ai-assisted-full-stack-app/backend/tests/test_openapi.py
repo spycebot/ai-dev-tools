@@ -10,8 +10,14 @@ import yaml
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.store import InMemoryCardStore
 
 CONTRACT_PATH = Path(__file__).resolve().parents[2] / "openapi.yaml"
+
+
+def _app():
+    # An explicit store keeps these tests off the real database.
+    return create_app(InMemoryCardStore(seed=False))
 
 
 def _operations(paths: dict) -> set[tuple[str, str]]:
@@ -32,11 +38,11 @@ def test_contract_file_is_valid_yaml():
 
 def test_documented_operations_match_the_app():
     documented = _operations(yaml.safe_load(CONTRACT_PATH.read_text())["paths"])
-    live = _operations(create_app().openapi()["paths"])
+    live = _operations(_app().openapi()["paths"])
     assert documented == live
 
 
 def test_app_serves_its_own_openapi_schema():
-    resp = TestClient(create_app()).get("/openapi.json")
+    resp = TestClient(_app()).get("/openapi.json")
     assert resp.status_code == 200
     assert resp.json()["info"]["title"] == "Card Catalog API"

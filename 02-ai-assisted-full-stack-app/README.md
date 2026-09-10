@@ -14,9 +14,9 @@ This project is being built in five stages. Current progress:
 - [x] **2. Frontend prototype** (mocked backend) — in `frontend/`
 - [x] **3. Backend** (FastAPI, mock data store) — in `backend/`, contract in [`openapi.yaml`](./openapi.yaml)
 - [x] **4. Connect frontend and backend** — `frontend/src/api/cards.js` now makes real HTTP calls, proxied to the backend by Vite
-- [ ] **5. Database** (SQLite, SQLAlchemy)
+- [x] **5. Database** (SQLite via SQLAlchemy) — `SqlAlchemyCardStore` is now the default; data persists to `backend/card_catalog.db`
 
-The frontend now talks to the real FastAPI backend, which still runs against an **in-memory mock store** (`backend/app/store.py`) — data lasts only as long as the backend process. Stage 5 replaces that store with a SQLAlchemy/SQLite one behind the same interface. **Both servers must be running** (see [Running the App](#running-the-app)).
+**All five stages are complete.** The app is a working full stack: a React board → a FastAPI service → a SQLAlchemy-backed SQLite database. The persistence layer is chosen behind the `CardStore` interface, so pointing it at PostgreSQL is a `DATABASE_URL` change plus a driver install — no application code. **Both servers must be running** (see [Running the App](#running-the-app)).
 
 ## Feature Summary
 
@@ -60,12 +60,17 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 │       └── index.css          # Aged-paper background, fonts, color tokens
 └── backend/           # FastAPI app (uv-managed)
     ├── pyproject.toml         # Dependencies + pytest config
+    ├── card_catalog.db        # Dev SQLite database (git-ignored, created on first run)
     ├── app/
     │   ├── main.py            # FastAPI app + routes (create_app factory)
     │   ├── models.py          # Pydantic schemas (Card, CardCreate, CardUpdate, CardMove)
-    │   ├── store.py           # CardStore interface + InMemoryCardStore (mock)
-    │   └── seed.py            # Seed cards (mirrors the frontend's seed set)
-    └── tests/                 # pytest suite (written test-first)
+    │   ├── board.py           # Pure column/position rules, shared by both stores
+    │   ├── store.py           # CardStore interface + InMemoryCardStore (reference impl)
+    │   ├── db.py              # Engine / session / table setup (dialect-agnostic)
+    │   ├── orm.py             # SQLAlchemy CardRow model
+    │   ├── sqlalchemy_store.py # SqlAlchemyCardStore — the default store
+    │   └── seed.py            # Seed cards + seed_if_empty (mirrors the frontend's set)
+    └── tests/                 # pytest suite (written test-first, run against both stores)
 ```
 
 ## Installation
@@ -103,7 +108,7 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 - Interactive API docs: **http://localhost:8000/docs**
 - Health check: **http://localhost:8000/health**
 - The API is served under `/api` (e.g. `GET /api/cards`); the full contract is in [`openapi.yaml`](./openapi.yaml).
-- The store is in-memory and re-seeds with four sample cards on every restart.
+- On first run the database (`backend/card_catalog.db`) is created and seeded with four sample cards. After that your data persists across restarts. Delete the file to start fresh.
 
 ### 2. Frontend
 
@@ -116,6 +121,33 @@ If the backend is not on `http://localhost:8000`, copy `frontend/.env.example`
 to `frontend/.env` and set `VITE_BACKEND_URL`. Restart the dev server after
 changing `vite.config.js` or `.env` — Vite only reads them at startup.
 
+## Database
+
+Persistence goes through the `CardStore` interface (`backend/app/store.py`).
+Two implementations exist:
+
+| Store | Where | Used by |
+|-------|-------|---------|
+| `InMemoryCardStore` | `app/store.py` | reference implementation; tests; injectable into `create_app()` |
+| `SqlAlchemyCardStore` | `app/sqlalchemy_store.py` | **the default** — what the server runs |
+
+The SQLAlchemy store reads a single `DATABASE_URL` and nothing else is
+dialect-specific, so:
+
+```bash
+# default (dev)
+uv run uvicorn app.main:app                    # sqlite:///./card_catalog.db
+
+# point at PostgreSQL later — no application code changes
+uv add "psycopg[binary]"
+DATABASE_URL="postgresql+psycopg://user:pass@localhost/card_catalog" uv run uvicorn app.main:app
+```
+
+Tables are created automatically on startup (`Base.metadata.create_all`); there
+is no migration tool yet (Alembic would be the next step if the schema starts
+changing). The board's column/position rules live in one place —
+`app/board.py` — which both stores call, so they can't drift apart.
+
 ## Running Tests
 
 **Backend** — the endpoints were built test-first (see [`_docs/specs.md`](./_docs/specs.md) §8):
@@ -125,7 +157,9 @@ cd backend
 uv run pytest
 ```
 
-`tests/test_cards.py` covers create/read/update/delete/move behaviour and validation; `tests/test_openapi.py` asserts that `openapi.yaml` and the live app expose exactly the same set of operations.
+- `tests/test_cards.py` — create/read/update/delete/move behaviour and validation. **Parametrized over both stores**, so every case runs against the in-memory store *and* a throwaway in-memory SQLite database; if they ever disagree, the suite fails.
+- `tests/test_persistence.py` — data survives a fresh store on the same file; seeding only happens once.
+- `tests/test_openapi.py` — `openapi.yaml` and the live app expose exactly the same set of operations.
 
 **Frontend** — interactivity is manually verified against the spec at each stage; no automated suite yet.
 
@@ -144,6 +178,11 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **`uv` had to be installed for stage 3.** The spec mandates `uv` for the Python backend but it wasn't on the box; installed via `curl -LsSf https://astral.sh/uv/install.sh | sh` (lands in `~/.local/bin`). The backend is a non-packaged uv project (no `[build-system]` in `pyproject.toml`), so `uv sync` just builds a `.venv`; `pythonpath = ["."]` in the pytest config makes `import app` work without an editable install.
 - **`move` returns the whole board, not one card.** Reordering shifts the `position` of every card it passes, so `POST /api/cards/{id}/move` responds with the full re-sequenced list (matching the frontend mock's `moveCard`). The plain `PATCH` endpoint deliberately rejects a `column` field (`extra="forbid"`) to keep "edit fields" and "move" as separate operations.
 - **Starlette's `TestClient` prints an httpx deprecation warning.** Recent Starlette nudges toward an `httpx2` package that isn't released yet; the warning is cosmetic and the tests pass. Left as-is rather than pinning older Starlette.
+- **Stage 5 was a store swap, not a rewrite.** `main.py` and the routes didn't change: `create_app()` just defaults to `SqlAlchemyCardStore` instead of the in-memory one. The refactor was pulling the column/position logic out of `InMemoryCardStore` into `app/board.py` (pure functions returning `Placement` values) so both stores share it — and the 28 existing tests, now parametrized to run against both, proved the behaviour matched.
+- **In-memory SQLite needs a `StaticPool`.** `sqlite://` gives each connection its own private database, so `sessionmaker` opening a second connection would see no tables. `make_engine` pins one connection (`poolclass=StaticPool`) for in-memory URLs — used by the parametrized test fixture. File-backed SQLite doesn't have this problem.
+- **Store construction had to be lazy.** `app/main.py` ends with `app = create_app()` for uvicorn, and `create_app()` used to build the store eagerly — which meant merely importing `app.main` in a test created and seeded `card_catalog.db` in the working directory. Fixed by building the default store on first request / server startup (FastAPI `lifespan`), not at import.
+- **Reserved-word column names.** `column` and `position` are reserved (or function names) in the SQL standard / PostgreSQL. The ORM maps the attributes to physical columns `board_column` and `sort_position` to stay portable; the API field names are unchanged. `priority`/`column` are stored as plain `VARCHAR` (not a DB `ENUM`) and validated by Pydantic on the way out — again for portability.
+- **SQLite drops timezones.** Stored `datetime`s come back naive; `_aware()` in the SQLAlchemy store re-stamps them as UTC so the API keeps emitting `...Z` timestamps consistently with the in-memory store.
 
 ## Course Context
 

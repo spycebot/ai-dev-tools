@@ -1,10 +1,19 @@
-"""Seed cards for the mock data store.
+"""Seed cards for a fresh board.
 
 Mirrors the frontend prototype's seed set (`frontend/src/api/cards.js`) so the
-board looks the same whether the UI is talking to localStorage or this backend.
+board looks the same on first run whichever store is behind it. `seed_if_empty`
+is called on startup and by the tests; it only writes when the store has no
+cards, so it's a no-op on a database that already has data.
 """
 
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from app.models import CardCreate
+
+if TYPE_CHECKING:
+    from app.store import CardStore
 
 SEED_CARDS: list[dict] = [
     {
@@ -40,3 +49,11 @@ SEED_CARDS: list[dict] = [
         "column": "done",
     },
 ]
+
+
+def seed_if_empty(store: "CardStore") -> None:
+    """Populate `store` with the seed cards, but only if it's currently empty."""
+    if store.list_cards():
+        return
+    for entry in SEED_CARDS:
+        store.create_card(CardCreate(**entry))
