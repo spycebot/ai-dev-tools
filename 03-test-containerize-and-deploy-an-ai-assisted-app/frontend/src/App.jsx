@@ -1,0 +1,217 @@
+import { useEffect, useMemo, useState } from "react";
+import { DndContext, PointerSensor, closestCorners, useSensor, useSensors } from "@dnd-kit/core";
+import { getSession, logout } from "./api/auth";
+import { COLUMNS, createCard, deleteCard, getCards, moveCard, setUnauthorizedHandler, updateCard } from "./api/cards";
+import Column from "./components/Column";
+import CardEditor from "./components/CardEditor";
+import Login from "./components/Login";
+import "./App.css";
+
+const COLUMN_LABELS = {
+  todo: "To Do",
+  in_progress: "In Progress",
+  done: "Done",
+};
+
+export default function App() {
+  const [cards, setCards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // { mode: 'create' | 'edit', card?, column? }
+  const [error, setError] = useState(null);
+  // null while the initial session check is in flight; true/false after.
+  const [authenticated, setAuthenticated] = useState(null);
+  const [loginMessage, setLoginMessage] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  );
+
+  // Any card request that comes back 401 (expired/cleared session) bounces
+  // back to the login screen instead of surfacing as a generic error.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setAuthenticated(false);
+      setLoginMessage("Your session expired. Please log in again.");
+    });
+  }, []);
+
+  useEffect(() => {
+    getSession().then(setAuthenticated);
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    getCards()
+      .then((data) => {
+        setCards(data);
+      })
+      .catch(() => {
+        setError("Couldn't load the board. Please refresh to try again.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [authenticated]);
+
+  async function handleLogout() {
+    await logout();
+    setCards([]);
+    setLoginMessage(null);
+    setAuthenticated(false);
+  }
+
+  const columns = useMemo(() => {
+    const grouped = { todo: [], in_progress: [], done: [] };
+    for (const card of cards) {
+      grouped[card.column]?.push(card);
+    }
+    for (const key of COLUMNS) {
+      grouped[key].sort((a, b) => a.position - b.position);
+    }
+    return grouped;
+  }, [cards]);
+
+  function findCard(id) {
+    return cards.find((c) => c.id === id);
+  }
+
+  async function handleDragEnd(event) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeCard = findCard(active.id);
+    if (!activeCard) return;
+
+    const overIsColumn = COLUMNS.includes(over.id);
+    const destColumn = overIsColumn ? over.id : findCard(over.id)?.column;
+    if (!destColumn) return;
+
+    const destSiblings = columns[destColumn].filter((c) => c.id !== active.id);
+    const destIndex = overIsColumn
+      ? destSiblings.length
+      : (() => {
+          const i = destSiblings.findIndex((c) => c.id === over.id);
+          return i === -1 ? destSiblings.length : i;
+        })();
+
+    if (destColumn === activeCard.column && destIndex === columns[destColumn].findIndex((c) => c.id === active.id)) {
+      return; // dropped in the same spot
+    }
+
+    // Optimistic local update so the drag feels instant.
+    setCards((prev) => {
+      const withoutActive = prev.filter((c) => c.id !== active.id);
+      const others = withoutActive.filter((c) => c.column !== destColumn);
+      const newDest = [...destSiblings];
+      newDest.splice(destIndex, 0, { ...activeCard, column: destColumn });
+      const withPositions = newDest.map((c, i) => ({ ...c, position: i }));
+      return [...others, ...withPositions];
+    });
+
+    try {
+      const updated = await moveCard(active.id, { column: destColumn, position: destIndex });
+      setCards(updated);
+    } catch (err) {
+      setError(err.message ?? "Couldn't save that move. Please try again.");
+      // Re-sync with the server so the board doesn't keep the failed optimistic move.
+      getCards().then(setCards).catch(() => {});
+    }
+  }
+
+  async function handleCreate(values) {
+    try {
+      const card = await createCard(values);
+      setCards((prev) => [...prev, card]);
+      setEditing(null);
+    } catch (err) {
+      setError(err.message ?? "Couldn't create that card.");
+      throw err; // keep the editor open so the user doesn't lose their input
+    }
+  }
+
+  async function handleUpdate(id, values) {
+    try {
+      const updated = await updateCard(id, values);
+      setCards((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      setEditing(null);
+    } catch (err) {
+      setError(err.message ?? "Couldn't save that card.");
+      throw err;
+    }
+  }
+
+  async function handleDelete(id) {
+    try {
+      await deleteCard(id);
+      setCards((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      setError(err.message ?? "Couldn't delete that card.");
+    }
+  }
+
+  if (authenticated === null) {
+    return <div className="loading-screen">Loading Card Catalog…</div>;
+  }
+
+  if (!authenticated) {
+    return (
+      <Login
+        message={loginMessage}
+        onSuccess={() => {
+          setLoading(true);
+          setAuthenticated(true);
+        }}
+      />
+    );
+  }
+
+  if (loading) {
+    return <div className="loading-screen">Loading Card Catalog…</div>;
+  }
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <button className="logout-button" onClick={handleLogout}>
+          Log out
+        </button>
+        <h1>Card Catalog</h1>
+        <p className="app-subtitle">a mini kanban board</p>
+      </header>
+
+      {error && (
+        <div className="error-banner" role="alert" onClick={() => setError(null)}>
+          {error}
+        </div>
+      )}
+
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+        <main className="board">
+          {COLUMNS.map((key) => (
+            <Column
+              key={key}
+              id={key}
+              title={COLUMN_LABELS[key]}
+              cards={columns[key]}
+              onAddCard={() => setEditing({ mode: "create", column: key })}
+              onEditCard={(card) => setEditing({ mode: "edit", card })}
+              onDeleteCard={handleDelete}
+            />
+          ))}
+        </main>
+      </DndContext>
+
+      {editing && (
+        <CardEditor
+          mode={editing.mode}
+          card={editing.card}
+          defaultColumn={editing.column}
+          onCancel={() => setEditing(null)}
+          onSubmit={(values) =>
+            editing.mode === "create" ? handleCreate(values) : handleUpdate(editing.card.id, values)
+          }
+        />
+      )}
+    </div>
+  );
+}

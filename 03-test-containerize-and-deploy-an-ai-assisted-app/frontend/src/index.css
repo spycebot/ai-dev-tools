@@ -1,0 +1,64 @@
+:root {
+  --paper: #ede2c8;
+  --paper-dark: #e2d3ac;
+  --ink: #2b2620;
+  --ink-soft: #4a4238;
+  --blueprint: #18385a;
+  --blueprint-soft: rgba(24, 56, 90, 0.35);
+  --amber: #7a5c0a;
+  --amber-soft: rgba(122, 92, 10, 0.16);
+  --danger: #7a1f1f;
+  --card-shadow: rgba(43, 38, 32, 0.35);
+
+  --font-body: "Special Elite", "Courier New", monospace;
+  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+
+  color-scheme: light;
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background-color: var(--paper);
+  /* CSS-only aged/yellowed paper: a directional base wash, a handful of
+     irregular "age spot" patches, and darker vignettes at the corners. No
+     bitmap images are used, per the "living paper" design reference. */
+  background-image:
+    radial-gradient(ellipse 500px 380px at 8% 12%, rgba(43, 38, 32, 0.10), transparent 60%),
+    radial-gradient(ellipse 420px 340px at 92% 8%, rgba(43, 38, 32, 0.09), transparent 55%),
+    radial-gradient(ellipse 460px 400px at 6% 94%, rgba(43, 38, 32, 0.10), transparent 58%),
+    radial-gradient(ellipse 520px 420px at 96% 92%, rgba(43, 38, 32, 0.11), transparent 60%),
+    radial-gradient(circle 220px at 25% 35%, rgba(122, 92, 10, 0.07), transparent 65%),
+    radial-gradient(circle 260px at 70% 65%, rgba(122, 92, 10, 0.06), transparent 65%),
+    radial-gradient(circle 180px at 55% 15%, rgba(43, 38, 32, 0.05), transparent 60%),
+    radial-gradient(circle 200px at 85% 45%, rgba(43, 38, 32, 0.05), transparent 60%),
+    radial-gradient(circle 240px at 15% 70%, rgba(43, 38, 32, 0.04), transparent 60%),
+    linear-gradient(160deg, var(--paper-dark) 0%, var(--paper) 40%, var(--paper) 60%, var(--paper-dark) 100%);
+  background-attachment: fixed;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-body);
+  color: var(--blueprint);
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button, input, textarea, select {
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+button {
+  cursor: pointer;
+}
