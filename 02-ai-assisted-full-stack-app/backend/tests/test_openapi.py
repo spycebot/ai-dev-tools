@@ -11,13 +11,15 @@ from fastapi.testclient import TestClient
 
 from app.main import create_app
 from app.store import InMemoryCardStore
+from tests.conftest import TEST_AUTH_CONFIG
 
 CONTRACT_PATH = Path(__file__).resolve().parents[2] / "openapi.yaml"
 
 
 def _app():
-    # An explicit store keeps these tests off the real database.
-    return create_app(InMemoryCardStore(seed=False))
+    # An explicit store keeps these tests off the real database; an explicit
+    # auth config keeps them off real environment variables.
+    return create_app(InMemoryCardStore(seed=False), auth_config=TEST_AUTH_CONFIG)
 
 
 def _operations(paths: dict) -> set[tuple[str, str]]:

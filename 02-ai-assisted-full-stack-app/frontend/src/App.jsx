@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { DndContext, PointerSensor, closestCorners, useSensor, useSensors } from "@dnd-kit/core";
-import { COLUMNS, createCard, deleteCard, getCards, moveCard, updateCard } from "./api/cards";
+import { getSession, logout } from "./api/auth";
+import { COLUMNS, createCard, deleteCard, getCards, moveCard, setUnauthorizedHandler, updateCard } from "./api/cards";
 import Column from "./components/Column";
 import CardEditor from "./components/CardEditor";
+import Login from "./components/Login";
 import "./App.css";
 
 const COLUMN_LABELS = {
@@ -16,12 +18,29 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // { mode: 'create' | 'edit', card?, column? }
   const [error, setError] = useState(null);
+  // null while the initial session check is in flight; true/false after.
+  const [authenticated, setAuthenticated] = useState(null);
+  const [loginMessage, setLoginMessage] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   );
 
+  // Any card request that comes back 401 (expired/cleared session) bounces
+  // back to the login screen instead of surfacing as a generic error.
   useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setAuthenticated(false);
+      setLoginMessage("Your session expired. Please log in again.");
+    });
+  }, []);
+
+  useEffect(() => {
+    getSession().then(setAuthenticated);
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated) return;
     getCards()
       .then((data) => {
         setCards(data);
@@ -32,7 +51,14 @@ export default function App() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [authenticated]);
+
+  async function handleLogout() {
+    await logout();
+    setCards([]);
+    setLoginMessage(null);
+    setAuthenticated(false);
+  }
 
   const columns = useMemo(() => {
     const grouped = { todo: [], in_progress: [], done: [] };
@@ -123,6 +149,22 @@ export default function App() {
     }
   }
 
+  if (authenticated === null) {
+    return <div className="loading-screen">Loading Card Catalog…</div>;
+  }
+
+  if (!authenticated) {
+    return (
+      <Login
+        message={loginMessage}
+        onSuccess={() => {
+          setLoading(true);
+          setAuthenticated(true);
+        }}
+      />
+    );
+  }
+
   if (loading) {
     return <div className="loading-screen">Loading Card Catalog…</div>;
   }
@@ -130,6 +172,9 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
+        <button className="logout-button" onClick={handleLogout}>
+          Log out
+        </button>
         <h1>Card Catalog</h1>
         <p className="app-subtitle">a mini kanban board</p>
       </header>

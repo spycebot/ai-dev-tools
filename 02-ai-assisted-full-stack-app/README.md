@@ -20,7 +20,7 @@ This project is being built in five stages. Current progress:
 
 ## Feature Summary
 
-- Single user, no login, one board, three fixed columns (no custom columns).
+- Single user, gated by one shared password (see [Authentication](#authentication) below), one board, three fixed columns (no custom columns).
 - Cards have a title (required), description, due date, and priority (low/medium/high).
 - Create, edit, and delete cards (delete requires confirmation — no undo).
 - Drag-and-drop to move cards between columns and to reorder cards within a column.
@@ -39,6 +39,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 | Database (dev)    | SQLite                                             | Accessed through SQLAlchemy so the backend stays database-agnostic.   |
 | Database (future) | PostgreSQL                                         | Swap-in target once the app is stable, no application code changes.   |
 | Styling           | Custom CSS ("living paper" theme)                 | Special Elite (body) and Share Tech Mono (data/labels) fonts, aged-paper CSS background, blueprint blue (`#18385a`) and annotation amber (`#7a5c0a`) accent colors. |
+| Authentication    | Single shared password, `bcrypt` + signed session cookie | No user table — one owner, one password. See [Authentication](#authentication). |
 
 ## Project Structure
 
@@ -54,15 +55,20 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 │   ├── .env.example          # VITE_BACKEND_URL (proxy target) override
 │   └── src/
 │       ├── api/cards.js       # The only module that talks to the backend (fetch)
-│       ├── components/        # Column, CardItem, CardEditor
-│       ├── App.jsx            # Board state, drag-and-drop wiring
+│       ├── api/auth.js        # login / logout / getSession
+│       ├── components/        # Column, CardItem, CardEditor, Login
+│       ├── App.jsx            # Board state, auth state, drag-and-drop wiring
 │       ├── App.css            # "Living paper" theme (layout + components)
 │       └── index.css          # Aged-paper background, fonts, color tokens
 └── backend/           # FastAPI app (uv-managed)
     ├── pyproject.toml         # Dependencies + pytest config
+    ├── .env.example           # AUTH_*, CORS_ORIGINS — copy to .env
     ├── card_catalog.db        # Dev SQLite database (git-ignored, created on first run)
+    ├── scripts/
+    │   └── set_password.py    # Generate/rotate the shared password's bcrypt hash
     ├── app/
     │   ├── main.py            # FastAPI app + routes (create_app factory)
+    │   ├── auth.py             # Password check, session cookies, rate limiting
     │   ├── models.py          # Pydantic schemas (Card, CardCreate, CardUpdate, CardMove)
     │   ├── board.py           # Pure column/position rules, shared by both stores
     │   ├── store.py           # CardStore interface + InMemoryCardStore (reference impl)
@@ -89,12 +95,40 @@ cd backend
 uv sync          # creates .venv and installs FastAPI + dev tools
 ```
 
+The backend won't start without a password configured — see
+[Authentication](#authentication) below before running it for the first time.
+
+## Authentication
+
+The app is gated by **one shared password** — there are no user accounts,
+sign-up, or "forgot password" flow, because there's only ever one account
+(you). The password's `bcrypt` hash lives in an environment variable, never
+in the database or in source; a signed, `httpOnly` session cookie (30-day
+lifetime) keeps you logged in after that. Set it up once:
+
+```bash
+cd backend
+cp .env.example .env
+uv run python scripts/set_password.py    # prompts for a password, prints two lines
+# paste the printed AUTH_PASSWORD_HASH and AUTH_SECRET_KEY into backend/.env
+```
+
+The server refuses to start until `AUTH_PASSWORD_HASH` and `AUTH_SECRET_KEY`
+are both set (see `backend/.env.example` for the full list of variables). To
+change the password later, just run the script again and update `.env` —
+there's no in-app reset flow by design; you're the only user, so rotating the
+password is a config edit, not a feature to build and maintain.
+
+A handful of failed login attempts from the same IP triggers a short
+lockout (see `app/auth.py`), to slow down anyone guessing at the password.
+
 ## Running the App
 
 The app needs **both** servers running: the FastAPI backend and the Vite dev
 server. The frontend calls a relative `/api/*` path; Vite proxies that to the
 backend (`vite.config.js`), so the browser only ever makes same-origin requests
-and there is no CORS to configure.
+and there is no CORS to configure — which also means the session cookie just
+works, with no cross-origin cookie configuration needed.
 
 ### 1. Backend (start this first)
 
@@ -104,6 +138,9 @@ uv run uvicorn app.main:app --reload                      # http://localhost:800
 # or, to reach it directly on the machine's IP:
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
+
+Open the app and you'll land on a password screen first — log in with the
+password you set above.
 
 - Interactive API docs: **http://localhost:8000/docs**
 - Health check: **http://localhost:8000/health**
@@ -160,6 +197,7 @@ uv run pytest
 - `tests/test_cards.py` — create/read/update/delete/move behaviour and validation. **Parametrized over both stores**, so every case runs against the in-memory store *and* a throwaway in-memory SQLite database; if they ever disagree, the suite fails.
 - `tests/test_persistence.py` — data survives a fresh store on the same file; seeding only happens once.
 - `tests/test_openapi.py` — `openapi.yaml` and the live app expose exactly the same set of operations.
+- `tests/test_auth.py` — login/logout/session, cookie tampering, and rate limiting. Card tests log in with a fixed test password (see `conftest.py`); these tests exercise the logged-out state directly.
 
 **Frontend** — interactivity is manually verified against the spec at each stage; no automated suite yet.
 
@@ -183,6 +221,8 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **Store construction had to be lazy.** `app/main.py` ends with `app = create_app()` for uvicorn, and `create_app()` used to build the store eagerly — which meant merely importing `app.main` in a test created and seeded `card_catalog.db` in the working directory. Fixed by building the default store on first request / server startup (FastAPI `lifespan`), not at import.
 - **Reserved-word column names.** `column` and `position` are reserved (or function names) in the SQL standard / PostgreSQL. The ORM maps the attributes to physical columns `board_column` and `sort_position` to stay portable; the API field names are unchanged. `priority`/`column` are stored as plain `VARCHAR` (not a DB `ENUM`) and validated by Pydantic on the way out — again for portability.
 - **SQLite drops timezones.** Stored `datetime`s come back naive; `_aware()` in the SQLAlchemy store re-stamps them as UTC so the API keeps emitting `...Z` timestamps consistently with the in-memory store.
+- **Auth added after all five build stages, ahead of public hosting.** With one owner and no user accounts, a full auth system (user table, hashed-password DB rows, email-based reset) would be solving a problem this app doesn't have. Went with the smallest thing that meets the actual goals (stop drive-by defacement/probing, let the owner still use it as a real kanban, let it be shown to prospective employers): one password, its `bcrypt` hash in an env var (not the database, not source), a signed timed cookie for sessions, and a `scripts/set_password.py` CLI instead of a self-service reset flow. `create_app()` takes an injectable `AuthConfig`, mirroring how it already took an injectable `CardStore` — tests use a fixed low-cost test password instead of touching real environment variables.
+- **`create_app()`'s auth config had to be lazy, same as the store.** Resolving `AuthConfig` from the environment eagerly inside `create_app()` meant `from app.main import create_app` (which `conftest.py` does) crashed at import time — before any test could inject its own config — whenever `AUTH_PASSWORD_HASH`/`AUTH_SECRET_KEY` weren't set. Fixed by building it on first use via the same holder-dict pattern as `get_store()`, with `lifespan` still resolving it eagerly at real server startup so a genuine deployment fails fast on missing config rather than on the first request.
 
 ## Course Context
 

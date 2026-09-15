@@ -7,14 +7,16 @@ info:
     Contract between the Card Catalog frontend and the FastAPI backend.
 
     One board, three fixed columns (`todo`, `in_progress`, `done`). Single
-    user, no authentication. This file is the source of truth for the
-    request/response shapes; the backend is built to match it and a test
+    user, gated by one shared password (no user accounts) — see the `auth`
+    endpoints. This file is the source of truth for the request/response
+    shapes; the backend is built to match it and a test
     (`backend/tests/test_openapi.py`) keeps the two in sync.
 servers:
   - url: http://localhost:8000
     description: Local development server
 tags:
   - name: cards
+  - name: auth
   - name: meta
 paths:
   /health:
@@ -34,6 +36,57 @@ paths:
                     type: string
                     const: ok
                 required: [status]
+  /api/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in with the shared password
+      description: >
+        On success, sets a signed, httpOnly session cookie. Rate-limited per
+        client IP (a handful of attempts per few minutes) to slow brute force.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in; session cookie set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStatus"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Clear the session cookie
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStatus"
+  /api/session:
+    get:
+      operationId: getSessionStatus
+      tags: [auth]
+      summary: Check whether the current session cookie is valid
+      responses:
+        "200":
+          description: >
+            Session status. Never errors — an absent or invalid cookie just
+            reports authenticated false.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStatus"
   /api/cards:
     get:
       operationId: listCards
@@ -51,6 +104,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     post:
       operationId: createCard
       tags: [cards]
@@ -71,6 +126,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/ValidationError"
   /api/cards/{card_id}:
@@ -87,6 +144,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
     patch:
@@ -111,6 +170,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
@@ -125,6 +186,8 @@ paths:
       responses:
         "204":
           description: The card was deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
   /api/cards/{card_id}/move:
@@ -154,6 +217,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
@@ -180,7 +245,31 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Missing, invalid, or expired session — log in via POST /api/login
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    TooManyRequests:
+      description: Too many failed login attempts from this client recently
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
+    LoginRequest:
+      type: object
+      properties:
+        password:
+          type: string
+      required: [password]
+    SessionStatus:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+      required: [authenticated]
     Priority:
       type: string
       enum: [low, medium, high]

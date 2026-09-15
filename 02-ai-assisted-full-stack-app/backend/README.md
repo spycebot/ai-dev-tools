@@ -11,11 +11,28 @@ The column/position rules both stores rely on live in `app/board.py`.
 See the top-level [`../README.md`](../README.md) for the full picture (including
 the PostgreSQL swap).
 
+## Authentication
+
+The app is gated by one shared password (see `app/auth.py`) — no user
+accounts, no database. Every `/api/cards*` route requires a signed session
+cookie, obtained via `POST /api/login`. The server **refuses to start**
+unless `AUTH_PASSWORD_HASH` and `AUTH_SECRET_KEY` are set — generate both
+with:
+
+```bash
+uv run python scripts/set_password.py
+```
+
+Paste the two printed lines into `backend/.env` (copy `.env.example` first if
+you don't have one yet), then start/restart the server. See `.env.example`
+for the full list of `AUTH_*` / `CORS_ORIGINS` variables and what they do.
+
 ## Quick reference
 
 ```bash
 uv sync                                   # install deps into .venv
 uv run pytest                             # run the test suite (both stores)
+uv run python scripts/set_password.py     # generate/rotate the shared password
 uv run uvicorn app.main:app --reload      # dev server on http://localhost:8000
 
 # use a different database:

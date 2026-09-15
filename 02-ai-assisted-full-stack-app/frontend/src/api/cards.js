@@ -7,10 +7,21 @@
 // Requests go to a relative `/api/*` path. In development the Vite dev server
 // proxies those to the backend (see `vite.config.js`), so the browser always
 // makes same-origin calls and there is no CORS to configure.
+//
+// Every `/api/cards*` route requires a valid session cookie (see
+// `../api/auth.js`); `credentials: "same-origin"` makes sure it's sent.
 
 const CARDS_URL = "/api/cards";
 
 export const COLUMNS = ["todo", "in_progress", "done"];
+
+// Called whenever a card request comes back 401 (no/expired session), so the
+// app can drop back to the login screen. Set by App.jsx; a no-op until then.
+let onUnauthorized = () => {};
+
+export function setUnauthorizedHandler(fn) {
+  onUnauthorized = fn;
+}
 
 /** Pull a human-readable message out of a failed response body. */
 async function errorMessage(response) {
@@ -31,6 +42,7 @@ async function request(url, options = {}) {
   let response;
   try {
     response = await fetch(url, {
+      credentials: "same-origin",
       ...options,
       headers: {
         ...(options.body ? { "Content-Type": "application/json" } : {}),
@@ -44,6 +56,9 @@ async function request(url, options = {}) {
     );
   }
 
+  if (response.status === 401) {
+    onUnauthorized();
+  }
   if (!response.ok) {
     throw new Error(await errorMessage(response));
   }
