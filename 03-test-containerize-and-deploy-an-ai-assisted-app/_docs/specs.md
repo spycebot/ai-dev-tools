@@ -114,3 +114,41 @@ This project is built stepwise, with a commit + push to GitHub after each comple
 - Custom columns.
 - Search/filtering, labels/tags beyond priority.
 - Card archiving instead of hard deletion.
+
+## 10. Deployment & Operations (Homework 3)
+
+This is homework assignment 3 for the AI Dev Tools Zoomcamp: testing, containerizing, and deploying the app built in homework 2. Scope per `AGENTS.md` / the [Module 3 assignment](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/blob/main/03-deployment/01-test-containerize-and-deploy-an-ai-assisted-app.md).
+
+### 10.1 Cloud platform: AWS
+
+The course material deploys to AWS; other platforms discussed (Render, Fly.io, Railway) are themselves built on top of AWS/GCP and mainly trade operational convenience (automatic TLS, managed Postgres backups, zero-downtime deploys out of the box) for reduced control over the underlying primitives. AWS was chosen deliberately — the added setup work (VPC, security groups, IAM, ALB) is itself the job-relevant skill being practiced, ahead of an AWS certification goal. See the README's "Requirements Discussion" note for the full reasoning.
+
+### 10.2 Infrastructure
+
+| Concern | Choice |
+|---|---|
+| Container hosting | **ECS Fargate** — serverless containers, no EC2 instances to manage |
+| Database | **RDS Postgres** (managed) — production replaces SQLite entirely |
+| Container images | **ECR** — one repository per service (frontend, backend) |
+| CI/CD → AWS auth | **GitHub Actions OIDC** assuming an AWS IAM role — no long-lived AWS access keys stored in GitHub secrets |
+| Load balancing / TLS | One Application Load Balancer, one target group — the backend Fargate service serves the built frontend (see §10.3), so there's a single origin and no path-based routing to configure |
+| Environments | **Lightweight staging + production**: one RDS instance hosting two databases (`staging_db`, `prod_db`), one ECS cluster running two low-cost Fargate services (`card-catalog-staging`, `card-catalog-prod`) |
+| Secrets | **AWS Secrets Manager** — `AUTH_PASSWORD_HASH`, `AUTH_SECRET_KEY`, `DATABASE_URL` per environment, injected into the ECS task definition as container secrets (not baked into images or stored in GitHub) |
+| Migrations | **Alembic**, driven off the existing SQLAlchemy models in `backend/app/orm.py`; `deploy.yml` runs `alembic upgrade head` against the target environment's database before/as part of the service update |
+
+### 10.3 Containerization
+- Multi-stage `Dockerfile` for the backend: build stage compiles the frontend (`npm run build`) and installs Python deps, runtime stage is a slim Python image that serves the API under `/api` **and** the built frontend static files (FastAPI mounts `frontend/dist/`) — one image, one container, one origin, matching the current dev setup's no-CORS/same-origin design.
+- `docker-compose.yml` for local dev/integration testing, running Postgres locally (not SQLite) so local behavior matches production.
+- SQLite remains for quick local iteration outside Docker if desired, but the Dockerized/CI/staging/production path uses Postgres end-to-end, per the "must be able to switch to PostgreSQL in production" requirement from `AGENTS.md`.
+
+### 10.4 Testing
+- `tests/integration/` — exercises a real (Postgres) database, Alembic migrations, authentication, and full frontend→backend workflows via the built container. Must stay fast enough to run on every push.
+- Existing unit test suites (`backend/tests/`) continue to run against the in-memory and SQLite stores as today.
+- **Post-deploy smoke test** (staging and production, after each deploy): `GET /health`, then a login → `GET /api/cards` round trip against the live environment. Failure fails the deploy job and triggers rollback (see §10.5).
+
+### 10.5 CI/CD
+- `.github/workflows/ci.yml` — lint, unit tests, integration tests as merge gates on every push/PR.
+- `.github/workflows/deploy.yml` — on merge to `main`: build image, push to ECR (tagged with the commit SHA), run Alembic migrations against `staging_db`, deploy to the staging ECS service, run the smoke test against staging; on success, repeat migrate+deploy+smoke-test against production. **Rollback:** if a deploy's smoke test fails, `deploy.yml` re-points the ECS service at the previous commit SHA's image tag (the last tag that passed its own smoke test) instead of leaving the failing deploy live; this is a redeploy of a known-good image, not a database rollback — Alembic migrations are expected to be additive/backward-compatible so an old image can still run against a migrated schema.
+
+### 10.6 Documentation
+- `docs/testing.md`, `docs/deployment.md`, `docs/release-process.md` — required deliverables, written as each corresponding piece is built.

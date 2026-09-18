@@ -2,21 +2,22 @@
 
 A mini Kanban board for tracking personal tasks across three stages — **To Do**, **In Progress**, and **Done** — styled after the ["living paper"](https://shannonware.com) design language: an old computer-manual look built from index cards on aged paper.
 
-This is homework assignment 2 for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course. The entire application — spec, frontend, backend, and database — is being built end-to-end with an AI coding agent (Claude Code), in stepwise fashion, with a commit + push after each completed step.
+This is homework assignment 3 for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course: testing, containerizing, and deploying the app built in homework 2. The entire application — spec, frontend, backend, database, and now deployment infrastructure — is being built end-to-end with an AI coding agent (Claude Code), in stepwise fashion, with a commit + push after each completed step.
 
-The full product specification lives at [`_docs/specs.md`](./_docs/specs.md). Read that document for complete functional requirements, the data model, and design details — this README focuses on what the app is, how it's built, and how to run it.
+The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) — §1–9 cover the app itself (carried over from homework 2), §10–11 cover the homework 3 deployment architecture. Read that document for complete functional requirements, the data model, and deployment design details — this README focuses on what the app is, how it's built, and how to run it.
 
 ## Status
 
-This project is being built in five stages. Current progress:
+**Homework 2 (app build) — all five stages complete:** spec → frontend prototype → backend (FastAPI, mock store) → connected frontend/backend → SQLite via SQLAlchemy. The app is a working full stack: a React board → a FastAPI service → a SQLAlchemy-backed SQLite database. **Both servers must be running locally** (see [Running the App](#running-the-app)).
 
-- [x] **1. Product specification** — see [`_docs/specs.md`](./_docs/specs.md)
-- [x] **2. Frontend prototype** (mocked backend) — in `frontend/`
-- [x] **3. Backend** (FastAPI, mock data store) — in `backend/`, contract in [`openapi.yaml`](./openapi.yaml)
-- [x] **4. Connect frontend and backend** — `frontend/src/api/cards.js` now makes real HTTP calls, proxied to the backend by Vite
-- [x] **5. Database** (SQLite via SQLAlchemy) — `SqlAlchemyCardStore` is now the default; data persists to `backend/card_catalog.db`
+**Homework 3 (test, containerize, deploy) — in progress:**
 
-**All five stages are complete.** The app is a working full stack: a React board → a FastAPI service → a SQLAlchemy-backed SQLite database. The persistence layer is chosen behind the `CardStore` interface, so pointing it at PostgreSQL is a `DATABASE_URL` change plus a driver install — no application code. **Both servers must be running** (see [Running the App](#running-the-app)).
+- [x] **1. Deployment spec** — target platform (AWS: ECS Fargate, RDS Postgres, ECR, GitHub Actions OIDC), environments, secrets, migrations, and CI/CD strategy decided; see [`_docs/specs.md`](./_docs/specs.md) §10–11
+- [ ] **2. Integration tests** — `tests/integration/` against a real Postgres database
+- [ ] **3. Containerization** — multi-stage `Dockerfile`, `docker-compose.yml`, SQLite → Postgres
+- [ ] **4. Continuous integration** — `.github/workflows/ci.yml`
+- [ ] **5. Deployment** — ECS Fargate + RDS Postgres + ECR, public URL
+- [ ] **6. Continuous delivery** — `.github/workflows/deploy.yml`, staging/production, smoke tests, rollback
 
 ## Feature Summary
 
@@ -205,6 +206,9 @@ uv run pytest
 
 Notes on anything non-obvious encountered while building this project, kept up to date as work progresses:
 
+- **Requirements discussion: AWS vs. a PaaS wrapper (Render/Fly.io/Railway) for deployment.** The course video/article deploy to AWS. Render, Fly.io, and Railway are themselves built on top of AWS/GCP, so choosing one of them is mainly a convenience trade — automatic TLS, managed Postgres backups, and zero-downtime deploys come out of the box, at the cost of hiding the underlying primitives (VPC, IAM, ALB, ECS task definitions) behind another vendor's control plane. Since one of the explicit goals here is building toward an AWS certification, that hidden complexity is exactly the job-relevant skill worth practicing rather than avoiding. Decision: deploy on AWS directly — **ECS Fargate** for the containers, **RDS Postgres** as the managed database, **ECR** for container images, and **GitHub Actions with OIDC** to assume an AWS IAM role for CI/CD (no long-lived AWS access keys stored as GitHub secrets). See [`_docs/specs.md`](./_docs/specs.md) §10 for the full deployment spec.
+- **Requirements discussion: staging environment cost vs. the homework's explicit requirement.** A single-production-environment setup was considered first, to minimize AWS cost/complexity for a solo learning project — but the homework explicitly lists staging vs. production as a required deliverable, so that tradeoff would likely cost points. Decision: a **lightweight staging setup** — one RDS instance hosting two databases (`staging_db`, `prod_db`) and one ECS cluster running two low-cost Fargate services, rather than fully duplicated infrastructure. `deploy.yml` promotes a build through staging (migrate → deploy → smoke test) before repeating the same sequence against production, with rollback to the last known-good image tag on smoke test failure.
+- **Requirements discussion: one container vs. two.** Rather than separate frontend/backend ECS services behind path-based ALB routing, the backend's Docker image serves the built frontend directly (FastAPI mounts the Vite build output), keeping the current dev setup's same-origin, no-CORS design and halving the AWS footprint (one ALB target group, one ECS service per environment instead of two).
 - **Git lives one level up.** This project's `.git` repository and `.gitignore` live in the parent directory (`/var/www/terzotech.net/ai-dev-tools/`), not in this folder. All git operations (status, add, commit, push) for this project are run from, or relative to, that parent directory rather than from `02-ai-assisted-full-stack-app/` itself.
 - **AGENTS.md takes precedence over the published homework instructions** where the two differ (for example, the homework assumes `.gitignore`/`.git` live inside the project folder — here they live in the parent repo instead).
 - **Spec-first workflow.** Before any code was written, the product specification was developed interactively (feature scope, data model, interaction choices, and the app name "Card Catalog" were all decided through a Q&A session) and captured in `_docs/specs.md`, per the course's spec-first methodology.
