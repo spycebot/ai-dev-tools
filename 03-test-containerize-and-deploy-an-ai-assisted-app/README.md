@@ -13,7 +13,7 @@ The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) —
 **Homework 3 (test, containerize, deploy) — in progress:**
 
 - [x] **1. Deployment spec** — target platform (AWS: ECS Fargate, RDS Postgres, ECR, GitHub Actions OIDC), environments, secrets, migrations, and CI/CD strategy decided; see [`_docs/specs.md`](./_docs/specs.md) §10–11
-- [ ] **2. Integration tests** — `tests/integration/` against a real Postgres database
+- [x] **2. Integration tests** — `backend/tests/integration/` against a real, ephemeral Postgres database (schema via Alembic); see [`docs/testing.md`](./docs/testing.md)
 - [ ] **3. Containerization** — multi-stage `Dockerfile`, `docker-compose.yml`, SQLite → Postgres
 - [ ] **4. Continuous integration** — `.github/workflows/ci.yml`
 - [ ] **5. Deployment** — ECS Fargate + RDS Postgres + ECR, public URL
@@ -37,20 +37,23 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 | Frontend          | React + Vite (Node.js)                            | Drag-and-drop via a library such as `@dnd-kit`.                        |
 | Backend           | Python + FastAPI, managed with `uv`               | Tests written before implementation.                                  |
 | API contract      | `openapi.yaml`                                    | Source of truth between frontend and backend.                         |
-| Database (dev)    | SQLite                                             | Accessed through SQLAlchemy so the backend stays database-agnostic.   |
-| Database (future) | PostgreSQL                                         | Swap-in target once the app is stable, no application code changes.   |
+| Database (dev)    | SQLite                                             | Accessed through SQLAlchemy so the backend stays database-agnostic. `Base.metadata.create_all` builds the schema — dev/test convenience only. |
+| Database (production target) | PostgreSQL (AWS RDS)                   | Schema built by **Alembic** migrations (`backend/migrations/`), not `create_all` — see [`_docs/specs.md`](./_docs/specs.md) §10. |
 | Styling           | Custom CSS ("living paper" theme)                 | Special Elite (body) and Share Tech Mono (data/labels) fonts, aged-paper CSS background, blueprint blue (`#18385a`) and annotation amber (`#7a5c0a`) accent colors. |
 | Authentication    | Single shared password, `bcrypt` + signed session cookie | No user table — one owner, one password. See [Authentication](#authentication). |
+| Testing (integration) | `pytest-postgresql`                            | Real Postgres, ephemeral per-session cluster — no Docker. See [`docs/testing.md`](./docs/testing.md). |
 
 ## Project Structure
 
 ```
-02-ai-assisted-full-stack-app/
+03-test-containerize-and-deploy-an-ai-assisted-app/
 ├── AGENTS.md          # Instructions for the AI coding agent building this project
 ├── README.md          # This file
 ├── openapi.yaml       # REST contract between frontend and backend (source of truth)
 ├── _docs/
-│   └── specs.md       # Full product specification
+│   └── specs.md       # Full product specification (app in §1-9, deployment in §10-11)
+├── docs/               # Homework 3 deliverables
+│   └── testing.md      # Test suite structure + why Postgres is provisioned the way it is
 ├── frontend/          # React + Vite app
 │   ├── vite.config.js        # Dev server + /api → backend proxy
 │   ├── .env.example          # VITE_BACKEND_URL (proxy target) override
@@ -65,6 +68,10 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
     ├── pyproject.toml         # Dependencies + pytest config
     ├── .env.example           # AUTH_*, CORS_ORIGINS — copy to .env
     ├── card_catalog.db        # Dev SQLite database (git-ignored, created on first run)
+    ├── alembic.ini             # Alembic config (URL resolved at runtime, not hardcoded)
+    ├── migrations/              # Alembic migrations — the Postgres schema source of truth
+    │   ├── env.py               # Points at app.db.Base.metadata + DATABASE_URL
+    │   └── versions/             # e.g. create_cards_table
     ├── scripts/
     │   └── set_password.py    # Generate/rotate the shared password's bcrypt hash
     ├── app/
@@ -78,6 +85,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
     │   ├── sqlalchemy_store.py # SqlAlchemyCardStore — the default store
     │   └── seed.py            # Seed cards + seed_if_empty (mirrors the frontend's set)
     └── tests/                 # pytest suite (written test-first, run against both stores)
+        └── integration/        # Real-Postgres suite — migrations, auth, card workflows
 ```
 
 ## Installation
@@ -188,17 +196,20 @@ changing). The board's column/position rules live in one place —
 
 ## Running Tests
 
-**Backend** — the endpoints were built test-first (see [`_docs/specs.md`](./_docs/specs.md) §8):
+**Backend** — the endpoints were built test-first (see [`_docs/specs.md`](./_docs/specs.md) §8). Full detail, including how the integration suite provisions Postgres, is in [`docs/testing.md`](./docs/testing.md):
 
 ```bash
 cd backend
-uv run pytest
+uv run pytest                        # everything — 85 tests, ~8s, no setup required
+uv run pytest -m "not integration"   # unit/store tests only
+uv run pytest -m integration         # integration tests only
 ```
 
 - `tests/test_cards.py` — create/read/update/delete/move behaviour and validation. **Parametrized over both stores**, so every case runs against the in-memory store *and* a throwaway in-memory SQLite database; if they ever disagree, the suite fails.
 - `tests/test_persistence.py` — data survives a fresh store on the same file; seeding only happens once.
 - `tests/test_openapi.py` — `openapi.yaml` and the live app expose exactly the same set of operations.
 - `tests/test_auth.py` — login/logout/session, cookie tampering, and rate limiting. Card tests log in with a fixed test password (see `conftest.py`); these tests exercise the logged-out state directly.
+- `tests/integration/` — the same kinds of workflows (migrations, auth, card CRUD/move) but against a **real, ephemeral PostgreSQL cluster** with the schema built by Alembic, not SQLite. See [`docs/testing.md`](./docs/testing.md) for how that database is provisioned without Docker and without touching this machine's other databases.
 
 **Frontend** — interactivity is manually verified against the spec at each stage; no automated suite yet.
 
@@ -206,6 +217,9 @@ uv run pytest
 
 Notes on anything non-obvious encountered while building this project, kept up to date as work progresses:
 
+- **Requirements discussion: Docker on a shared production box, for integration testing.** This machine already runs a system PostgreSQL 17 service that hosts another live site's database (`shannonware`), and has no Docker installed. The natural options were: install Docker and use `testcontainers`; add a dedicated role/database to the existing system Postgres service; or provision a fully separate, ephemeral Postgres cluster per test session. Docker was ruled out first — a root-privileged daemon is a meaningful addition to the attack surface of a box serving other live sites, for a benefit (container parity with CI) not actually needed yet at the testing stage. Between the two native-Postgres options, a dedicated role on the *existing* service was rejected too, in favor of **`pytest-postgresql`**, which boots a throwaway Postgres cluster (its own data directory, port, and process, via the `initdb`/`postgres` binaries the `postgresql-17` apt package already installs) per test session and tears it down after — this removes even the possibility of a test misconfiguration touching real data, since it's never the same server process. See [`docs/testing.md`](./docs/testing.md) for the full writeup. (Docker itself will be needed later, in Step 3, to build and test the app's own container images — that's a separate decision, likely to land on "build/test in CI, not on this box.")
+- **`alembic init` directory naming pitfall.** The default `alembic init alembic` command names the migrations directory `alembic/` — which, combined with this project's `pythonpath = ["."]` pytest setting (and `backend/` generally being on `sys.path` when Alembic itself runs from that directory), risks the local directory shadowing the *installed* `alembic` package on `import alembic`. Used `alembic init migrations` instead (directory named `migrations/`, referenced by `script_location` in `alembic.ini`) to sidestep the collision entirely.
+- **`pytest-postgresql`'s default `dbname` is never actually created by `postgresql_proc` alone.** The fixture's default database name (`tests`) is only created on demand by the separate `postgresql` fixture (which hands back a ready connection to it); a handwritten admin connection built from `postgresql_proc`'s host/port/dbname to issue `CREATE DATABASE` therefore failed with `database "tests" does not exist`. Fixed by always connecting to the cluster's always-present `postgres` bootstrap database to run `CREATE DATABASE`/`DROP DATABASE`, the same way you would against any real Postgres cluster.
 - **Requirements discussion: AWS vs. a PaaS wrapper (Render/Fly.io/Railway) for deployment.** The course video/article deploy to AWS. Render, Fly.io, and Railway are themselves built on top of AWS/GCP, so choosing one of them is mainly a convenience trade — automatic TLS, managed Postgres backups, and zero-downtime deploys come out of the box, at the cost of hiding the underlying primitives (VPC, IAM, ALB, ECS task definitions) behind another vendor's control plane. Since one of the explicit goals here is building toward an AWS certification, that hidden complexity is exactly the job-relevant skill worth practicing rather than avoiding. Decision: deploy on AWS directly — **ECS Fargate** for the containers, **RDS Postgres** as the managed database, **ECR** for container images, and **GitHub Actions with OIDC** to assume an AWS IAM role for CI/CD (no long-lived AWS access keys stored as GitHub secrets). See [`_docs/specs.md`](./_docs/specs.md) §10 for the full deployment spec.
 - **Requirements discussion: staging environment cost vs. the homework's explicit requirement.** A single-production-environment setup was considered first, to minimize AWS cost/complexity for a solo learning project — but the homework explicitly lists staging vs. production as a required deliverable, so that tradeoff would likely cost points. Decision: a **lightweight staging setup** — one RDS instance hosting two databases (`staging_db`, `prod_db`) and one ECS cluster running two low-cost Fargate services, rather than fully duplicated infrastructure. `deploy.yml` promotes a build through staging (migrate → deploy → smoke test) before repeating the same sequence against production, with rollback to the last known-good image tag on smoke test failure.
 - **Requirements discussion: one container vs. two.** Rather than separate frontend/backend ECS services behind path-based ALB routing, the backend's Docker image serves the built frontend directly (FastAPI mounts the Vite build output), keeping the current dev setup's same-origin, no-CORS design and halving the AWS footprint (one ALB target group, one ECS service per environment instead of two).
