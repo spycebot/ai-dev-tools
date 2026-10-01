@@ -1,0 +1,9 @@
+{
+  "name": "ai-devtools-agent-pack",
+  "version": "0.1.0",
+  "description": "Portable packaging of this project's Agent Extension Pack: a CI-failure-triage skill, an API-change review subagent, and a secrets-write guardrail hook. Built for the Card Catalog app but written generically enough to drop into another FastAPI + pytest project.",
+  "author": {
+    "name": "spycebot"
+  },
+  "homepage": "https://github.com/spycebot/ai-dev-tools/tree/main/05-agent-capabilities"
+}

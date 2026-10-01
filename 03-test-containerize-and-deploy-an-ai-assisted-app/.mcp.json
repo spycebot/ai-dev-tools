@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "card-catalog-ops": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "../05-agent-capabilities/mcp-server",
+        "python",
+        "../05-agent-capabilities/mcp-server/server.py"
+      ]
+    }
+  }
+}

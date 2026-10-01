@@ -1,0 +1,12 @@
+[project]
+name = "card-catalog-ops-mcp"
+version = "0.1.0"
+description = "Scoped, read-only/test-only MCP server for the Card Catalog app (Module 5 Agent Extension Pack)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.2,<2",
+]
+
+[tool.uv]
+package = false
