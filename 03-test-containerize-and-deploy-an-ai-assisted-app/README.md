@@ -15,7 +15,7 @@ The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) —
 - [x] **1. Deployment spec** — target platform (AWS: ECS Fargate, RDS Postgres, ECR, GitHub Actions OIDC), environments, secrets, migrations, and CI/CD strategy decided; see [`_docs/specs.md`](./_docs/specs.md) §10–11
 - [x] **2. Integration tests** — `backend/tests/integration/` against a real, ephemeral Postgres database (schema via Alembic); see [`docs/testing.md`](./docs/testing.md)
 - [x] **3. Containerization** — multi-stage `Dockerfile` (one image serves API + built frontend), `docker-compose.yml` (Postgres 17 + one-shot Alembic `migrate` service + app); see [Running with Docker](#running-with-docker)
-- [ ] **4. Continuous integration** — `.github/workflows/ci.yml`
+- [x] **4. Continuous integration** — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (repo root): lint + frontend build, unit tests, integration tests on Postgres 17, container build + Compose smoke test; see [`docs/testing.md`](./docs/testing.md#ci)
 - [ ] **5. Deployment** — ECS Fargate + RDS Postgres + ECR, public URL
 - [ ] **6. Continuous delivery** — `.github/workflows/deploy.yml`, staging/production, smoke tests, rollback
 

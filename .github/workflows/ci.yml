@@ -1,0 +1,132 @@
+# CI for the Card Catalog app (03-test-containerize-and-deploy-an-ai-assisted-app).
+#
+# Every push and pull request runs four independent jobs; all four are
+# required status checks on `main`, so a PR can't merge unless each passes:
+#
+#   lint               oxlint over the frontend
+#   unit-tests         backend pytest, unit/store layer (no services)
+#   integration-tests  backend pytest against a real, ephemeral Postgres 17
+#   container          docker build + a Compose smoke test of the built image
+#
+# deploy.yml reuses this workflow (workflow_call) as its gate before deploying.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "03-test-containerize-and-deploy-an-ai-assisted-app/**"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "03-test-containerize-and-deploy-an-ai-assisted-app/**"
+      - ".github/workflows/**"
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  APP_DIR: 03-test-containerize-and-deploy-an-ai-assisted-app
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}/frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ env.APP_DIR }}/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build # catches import/syntax errors oxlint doesn't
+
+  unit-tests:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}/backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+          cache-dependency-glob: ${{ env.APP_DIR }}/backend/uv.lock
+      - run: uv sync --frozen
+      - run: uv run pytest -m "not integration"
+
+  integration-tests:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}/backend
+    steps:
+      - uses: actions/checkout@v7
+      # Same major version as production (RDS Postgres 17). The runner image
+      # ships an older bundled Postgres, so install 17 from the PGDG apt repo;
+      # pytest-postgresql then boots a throwaway cluster from its binaries
+      # (see docs/testing.md) — no service container, no Docker.
+      - name: Install PostgreSQL 17
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-17
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+          cache-dependency-glob: ${{ env.APP_DIR }}/backend/uv.lock
+      - run: uv sync --frozen
+      - run: uv run pytest -m integration
+        env:
+          PG_CTL_PATH: /usr/lib/postgresql/17/bin/pg_ctl
+
+  container:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ env.APP_DIR }}
+          tags: card-catalog:local
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      # Bring the real Compose stack up on the image just built (Postgres +
+      # Alembic migrate + app) and prove it serves: health, the frontend,
+      # a login, and an authenticated API call. Throwaway credentials only.
+      - name: Compose smoke test
+        run: |
+          set -euo pipefail
+          HASH=$(docker run --rm card-catalog:local python -c \
+            "import bcrypt; print(bcrypt.hashpw(b'ci-smoke-password', bcrypt.gensalt(4)).decode())")
+          {
+            echo "AUTH_PASSWORD_HASH='$HASH'"
+            echo "AUTH_SECRET_KEY=$(openssl rand -hex 32)"
+          } > .env
+          docker compose up -d --no-build --wait --wait-timeout 120
+          B=http://127.0.0.1:8000
+          curl -fsS $B/health
+          curl -fsS $B/ | grep -q '<title>Card Catalog</title>'
+          test "$(curl -s -o /dev/null -w '%{http_code}' $B/api/cards)" = 401
+          curl -fsS -c cj -H 'content-type: application/json' \
+            -d '{"password":"ci-smoke-password"}' $B/api/login
+          curl -fsS -b cj $B/api/cards | python3 -c "import json,sys; assert len(json.load(sys.stdin)) >= 1"
+          echo "smoke test passed"
+      - name: Compose logs on failure
+        if: failure()
+        run: docker compose logs

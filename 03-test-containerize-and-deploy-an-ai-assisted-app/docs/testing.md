@@ -85,9 +85,24 @@ different bundled version.
 
 ## CI
 
-`.github/workflows/ci.yml` (Step 3 of this homework, not yet built) will run
-both layers on every push/PR as merge gates. The unit tests need no special
-CI setup; the integration tests can either keep using `pytest-postgresql`
-(as here — it needs no Docker, and GitHub-hosted runners ship the
-`postgresql` apt package) or use GitHub Actions' built-in `services:
-postgres:` container — a decision left for that step.
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (at the
+repository root — GitHub only reads workflows from there) runs on every push
+to `main` and every pull request that touches this app, as four independent
+jobs. All four are required status checks for merging to `main`:
+
+| Job | Runs | Fails when |
+|---|---|---|
+| `lint` | `npm ci`, `npm run lint` (oxlint), `npm run build` | a lint error, or the production frontend build breaks |
+| `unit-tests` | `uv sync --frozen`, `pytest -m "not integration"` | any unit/store test fails, or `uv.lock` is out of date |
+| `integration-tests` | installs PostgreSQL **17** from the PGDG apt repo, then `pytest -m integration` with `PG_CTL_PATH` pointed at it | any migration/auth/workflow test against real Postgres fails |
+| `container` | builds the `Dockerfile` (layer cache in GitHub Actions), then `docker compose up --wait` on that image and a smoke test: `/health`, the frontend's `index.html`, a 401 without a session, a login, and an authenticated `GET /api/cards` | the image doesn't build, migrations fail, the app doesn't become healthy, or any smoke request fails |
+
+The integration job keeps the same `pytest-postgresql` approach used locally
+(no Docker, no `services:` container) and installs Postgres 17 rather than
+using the runner's bundled version, so CI exercises the same major version
+as production (RDS Postgres 17). The container smoke test generates a
+throwaway password hash and secret key inside the job; no real secret is
+used or stored in CI.
+
+`deploy.yml` (Step 5) calls this same workflow (`workflow_call`) as its first
+job, so nothing is deployed unless every check above passes on that commit.
