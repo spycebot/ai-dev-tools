@@ -2,7 +2,7 @@
 
 Portable instructions for any coding agent (Claude Code, Codex, or
 equivalent) working in this repo — added as part of the Module 5 "Agent
-Extension Pack" (`../05-agent-capabilities/`). The homework-process notes
+Extension Pack" (`../04-agent-capabilities/`). The homework-process notes
 below this section are specific to how this app was originally built;
 this section is the durable reference for working in it going forward.
 
@@ -38,8 +38,8 @@ keeps the original field names. Card/board tests are parametrized over both
 in `backend/.env` (git-ignored), never in source or the database — the
 server refuses to start without them. Never print, log, or commit `.env`
 contents, `card_catalog.db`, or a real session cookie value. The MCP server
-and subagent in `../05-agent-capabilities/` are read-only / test-only by
-design — see `../05-agent-capabilities/docs/permissions.md` before granting
+and subagent in `../04-agent-capabilities/` are read-only / test-only by
+design — see `../04-agent-capabilities/docs/permissions.md` before granting
 either more than that.
 
 -----

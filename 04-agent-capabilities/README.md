@@ -16,7 +16,7 @@ and can't do. [`docs/demo.md`](docs/demo.md) walks through the module's
 six-step demo script.
 
 ```
-05-agent-capabilities/
+04-agent-capabilities/
 ├── docs/
 │   ├── agent-extension-pack.md   # requirement → file map, start here
 │   ├── permissions.md            # security/permission boundaries

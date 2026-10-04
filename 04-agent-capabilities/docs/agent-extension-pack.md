@@ -22,7 +22,7 @@ relative to the directory an agent is actually working in. For the demo
 script below to work as written — "the agent reads the project
 instructions," "a hook prevents/checks an action" — those files have to live
 in `03-test-containerize-and-deploy-an-ai-assisted-app/`, the app being
-extended, not in this module folder. This folder (`05-agent-capabilities/`)
+extended, not in this module folder. This folder (`04-agent-capabilities/`)
 holds the reusable/portable artifacts (the MCP server's source, the
 generalized plugin package) and the documentation tying it all together.
 

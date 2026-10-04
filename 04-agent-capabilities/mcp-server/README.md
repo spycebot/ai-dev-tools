@@ -23,7 +23,7 @@ arbitrary-command tool, no `.env` read tool).
 ## Running it standalone
 
 ```bash
-cd 05-agent-capabilities/mcp-server
+cd 04-agent-capabilities/mcp-server
 uv run python server.py
 ```
 
