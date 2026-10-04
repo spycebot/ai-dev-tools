@@ -14,7 +14,7 @@ The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) —
 
 - [x] **1. Deployment spec** — target platform (AWS: ECS Fargate, RDS Postgres, ECR, GitHub Actions OIDC), environments, secrets, migrations, and CI/CD strategy decided; see [`_docs/specs.md`](./_docs/specs.md) §10–11
 - [x] **2. Integration tests** — `backend/tests/integration/` against a real, ephemeral Postgres database (schema via Alembic); see [`docs/testing.md`](./docs/testing.md)
-- [ ] **3. Containerization** — multi-stage `Dockerfile`, `docker-compose.yml`, SQLite → Postgres
+- [x] **3. Containerization** — multi-stage `Dockerfile` (one image serves API + built frontend), `docker-compose.yml` (Postgres 17 + one-shot Alembic `migrate` service + app); see [Running with Docker](#running-with-docker)
 - [ ] **4. Continuous integration** — `.github/workflows/ci.yml`
 - [ ] **5. Deployment** — ECS Fargate + RDS Postgres + ECR, public URL
 - [ ] **6. Continuous delivery** — `.github/workflows/deploy.yml`, staging/production, smoke tests, rollback
@@ -42,6 +42,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 | Styling           | Custom CSS ("living paper" theme)                 | Special Elite (body) and Share Tech Mono (data/labels) fonts, aged-paper CSS background, blueprint blue (`#18385a`) and annotation amber (`#7a5c0a`) accent colors. |
 | Authentication    | Single shared password, `bcrypt` + signed session cookie | No user table — one owner, one password. See [Authentication](#authentication). |
 | Testing (integration) | `pytest-postgresql`                            | Real Postgres, ephemeral per-session cluster — no Docker. See [`docs/testing.md`](./docs/testing.md). |
+| Containers        | Docker (multi-stage build) + Docker Compose        | One image: Node builds the frontend, uv installs backend deps, a slim `python:3.13` runtime serves both. Compose runs it on Postgres 17. |
 
 ## Project Structure
 
@@ -50,6 +51,10 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── AGENTS.md          # Instructions for the AI coding agent building this project
 ├── README.md          # This file
 ├── openapi.yaml       # REST contract between frontend and backend (source of truth)
+├── Dockerfile         # Multi-stage build: frontend → backend deps → slim runtime serving both
+├── docker-compose.yml # Local stack on Postgres: db + migrate (alembic upgrade head) + app
+├── .dockerignore      # Keeps node_modules, .venv, .env files and *.db out of the build context
+├── .env.example       # Compose settings: AUTH_* secrets, Postgres password, port/bind overrides
 ├── _docs/
 │   └── specs.md       # Full product specification (app in §1-9, deployment in §10-11)
 ├── docs/               # Homework 3 deliverables
@@ -167,6 +172,49 @@ If the backend is not on `http://localhost:8000`, copy `frontend/.env.example`
 to `frontend/.env` and set `VITE_BACKEND_URL`. Restart the dev server after
 changing `vite.config.js` or `.env` — Vite only reads them at startup.
 
+## Running with Docker
+
+The containerized path runs the app the way production does: **one image**
+that serves the API under `/api` *and* the built frontend at `/`, against
+**PostgreSQL** (not SQLite), with the schema built by **Alembic**. Only Docker
+(with the Compose plugin) is needed — no Node, Python or uv on the host.
+
+```bash
+cp .env.example .env
+# Generate the password hash + secret key (needs uv; or run it anywhere and copy the output):
+cd backend && uv run python scripts/set_password.py && cd ..
+# Paste both lines into .env. Keep AUTH_PASSWORD_HASH in SINGLE quotes —
+# the bcrypt hash is full of `$` that Compose would otherwise try to expand.
+
+docker compose up --build        # http://localhost:8000
+```
+
+What happens on `up`:
+
+1. **`db`** — `postgres:17-alpine` starts with a named volume (`pgdata`), and
+   reports healthy via `pg_isready`.
+2. **`migrate`** — a one-shot container from the app image runs
+   `alembic upgrade head`, then exits. On every later `up` it's a no-op.
+3. **`app`** — starts only after `migrate` *exited successfully*
+   (`depends_on: condition: service_completed_successfully`), serves on
+   port 8000, and reports its own health via `GET /health`.
+
+| Command | Effect |
+|---|---|
+| `docker compose up -d --build` | Build and start in the background |
+| `docker compose logs -f app` | Follow the app's logs |
+| `docker compose ps -a` | Status of all three services (`migrate` shows `Exited (0)` when healthy) |
+| `docker compose down` | Stop; **data is kept** in the `pgdata` volume |
+| `docker compose down -v` | Stop **and delete the database** — next `up` starts from a fresh, seeded board |
+| `docker compose exec db psql -U card_catalog` | A SQL shell on the local database |
+
+By default the app port is bound to **127.0.0.1 only**, so it isn't exposed
+on a server's public interface by accident. Set `APP_BIND=0.0.0.0` (and/or
+`APP_PORT`) in `.env` to change that, or reach it from your laptop with an
+SSH tunnel: `ssh -L 8000:127.0.0.1:8000 <server>`. `AUTH_COOKIE_SECURE`
+defaults to `false` here because local Compose is plain HTTP; it must be
+`true` anywhere the app is served over HTTPS.
+
 ## Database
 
 Persistence goes through the `CardStore` interface (`backend/app/store.py`).
@@ -223,6 +271,10 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **Requirements discussion: AWS vs. a PaaS wrapper (Render/Fly.io/Railway) for deployment.** The course video/article deploy to AWS. Render, Fly.io, and Railway are themselves built on top of AWS/GCP, so choosing one of them is mainly a convenience trade — automatic TLS, managed Postgres backups, and zero-downtime deploys come out of the box, at the cost of hiding the underlying primitives (VPC, IAM, ALB, ECS task definitions) behind another vendor's control plane. Since one of the explicit goals here is building toward an AWS certification, that hidden complexity is exactly the job-relevant skill worth practicing rather than avoiding. Decision: deploy on AWS directly — **ECS Fargate** for the containers, **RDS Postgres** as the managed database, **ECR** for container images, and **GitHub Actions with OIDC** to assume an AWS IAM role for CI/CD (no long-lived AWS access keys stored as GitHub secrets). See [`_docs/specs.md`](./_docs/specs.md) §10 for the full deployment spec.
 - **Requirements discussion: staging environment cost vs. the homework's explicit requirement.** A single-production-environment setup was considered first, to minimize AWS cost/complexity for a solo learning project — but the homework explicitly lists staging vs. production as a required deliverable, so that tradeoff would likely cost points. Decision: a **lightweight staging setup** — one RDS instance hosting two databases (`staging_db`, `prod_db`) and one ECS cluster running two low-cost Fargate services, rather than fully duplicated infrastructure. `deploy.yml` promotes a build through staging (migrate → deploy → smoke test) before repeating the same sequence against production, with rollback to the last known-good image tag on smoke test failure.
 - **Requirements discussion: one container vs. two.** Rather than separate frontend/backend ECS services behind path-based ALB routing, the backend's Docker image serves the built frontend directly (FastAPI mounts the Vite build output), keeping the current dev setup's same-origin, no-CORS design and halving the AWS footprint (one ALB target group, one ECS service per environment instead of two).
+- **Week 3 moved to an AWS EC2 instance for the Docker work.** Steps 1–2 of this homework were built on the shared OVH VPS that also hosts several live websites; installing a root-privileged Docker daemon there was ruled out (see the integration-testing note above). Containerization (step 3) onward is done on a dedicated AWS EC2 instance (`t3.small`, Ubuntu, Docker 29) in the same repo checkout, so nothing about the image build or Compose stack touches those sites.
+- **Compose expands `$` in `.env` values — and bcrypt hashes are full of them.** An unquoted `AUTH_PASSWORD_HASH=$2b$12$...` gets mangled (`$2b`, `$12` are read as variable references), and the app then rejects every password. Single-quoting the value (`'$2b$12$...'`) makes Compose take it literally; `.env.example` ships with the quotes already in place.
+- **Migrations are a separate step, not part of container start.** The app still calls `Base.metadata.create_all` on boot (harmless on an Alembic-built schema — every table already exists). But if the app ever booted *before* Alembic on an empty database, `create_all` would create the tables first and the later `alembic upgrade head` would fail with "table already exists". The `migrate` service, gated by `service_completed_successfully`, makes that ordering explicit locally; in production, `deploy.yml` will run the same `alembic upgrade head` (same image, different command) before the new app version goes live.
+- **Compose's `${VAR:?}` guard also blocks `docker compose build`.** Compose interpolates the whole file before doing anything, so a build without a `.env` stops with "required variable AUTH_PASSWORD_HASH is missing". That's the intended fail-fast for `up`; CI builds the image with plain `docker build`, which never reads the Compose file.
 - **Git lives one level up.** This project's `.git` repository and `.gitignore` live in the parent directory (`/var/www/terzotech.net/ai-dev-tools/`), not in this folder. All git operations (status, add, commit, push) for this project are run from, or relative to, that parent directory rather than from `02-ai-assisted-full-stack-app/` itself.
 - **AGENTS.md takes precedence over the published homework instructions** where the two differ (for example, the homework assumes `.gitignore`/`.git` live inside the project folder — here they live in the parent repo instead).
 - **Spec-first workflow.** Before any code was written, the product specification was developed interactively (feature scope, data model, interaction choices, and the app name "Card Catalog" were all decided through a Q&A session) and captured in `_docs/specs.md`, per the course's spec-first methodology.

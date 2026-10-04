@@ -1,0 +1,59 @@
+# Card Catalog — local stack on PostgreSQL, matching production.
+#
+#   cp .env.example .env      # then fill in AUTH_* (see the README)
+#   docker compose up --build
+#   open http://localhost:8000
+#
+# Three services: `db` (Postgres 17), `migrate` (a one-shot `alembic upgrade
+# head` using the app image), and `app`, which only starts once migrations
+# have finished successfully. SQLite isn't used anywhere in this path.
+
+name: card-catalog
+
+x-database-url: &database-url
+  DATABASE_URL: postgresql+psycopg://card_catalog:${POSTGRES_PASSWORD:-card_catalog}@db:5432/card_catalog
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: card_catalog
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-card_catalog}
+      POSTGRES_DB: card_catalog
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U card_catalog -d card_catalog"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  migrate:
+    build: .
+    image: card-catalog:local
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      <<: *database-url
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    image: card-catalog:local
+    environment:
+      <<: *database-url
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:?set AUTH_PASSWORD_HASH in .env — see .env.example}
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?set AUTH_SECRET_KEY in .env — see .env.example}
+      # Plain HTTP on localhost, so the session cookie can't require TLS here.
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+    ports:
+      # Loopback only by default; set APP_BIND=0.0.0.0 to expose it.
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-8000}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1,0 +1,13 @@
+# Keep the build context small and secret-free: only source goes in.
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/*.db
+**/*.sqlite*
+**/.env
+**/.env.*
+!**/.env.example
+frontend/dist
+.claude
+.mcp.json

@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import APIRouter, Cookie, Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.auth import COOKIE_NAME, AuthConfig, LoginRequest, RateLimiter, default_auth_config
 from app.db import init_db, make_engine, make_session_factory
@@ -220,6 +221,14 @@ def create_app(
         return cards_out
 
     app.include_router(cards)
+
+    # In the container image the built frontend ships next to the API (see
+    # ../Dockerfile), so one process serves both from one origin. Unset in
+    # dev, where Vite serves the frontend and proxies /api here. Mounted last
+    # so /health, /api/* and /docs always win over a static path.
+    frontend_dist = os.environ.get("FRONTEND_DIST")
+    if frontend_dist:
+        app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
 
     return app
 
