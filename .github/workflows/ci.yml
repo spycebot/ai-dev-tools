@@ -18,15 +18,17 @@ on:
     paths:
       - "03-test-containerize-and-deploy-an-ai-assisted-app/**"
       - ".github/workflows/**"
+  # No path filter on PRs: these four checks are required to merge into
+  # main, and a required check that never runs would block the PR forever.
   pull_request:
-    paths:
-      - "03-test-containerize-and-deploy-an-ai-assisted-app/**"
-      - ".github/workflows/**"
   workflow_call:
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # github.workflow is the *caller's* name when deploy.yml runs this via
+  # workflow_call, so the deploy's CI gate never cancels (or is cancelled by)
+  # the regular CI run for the same push.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

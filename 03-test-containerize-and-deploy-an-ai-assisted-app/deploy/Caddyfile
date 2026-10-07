@@ -1,0 +1,24 @@
+# Caddy obtains and renews Let's Encrypt certificates for both names
+# automatically, redirects HTTP to HTTPS, and forwards to the app containers
+# over the compose network (which is why the app sets AUTH_COOKIE_SECURE=true).
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+cards.terzotech.net {
+	import common
+	reverse_proxy prod:8000
+}
+
+staging.cards.terzotech.net {
+	import common
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy staging:8000
+}

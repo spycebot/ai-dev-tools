@@ -1,0 +1,41 @@
+# Card Catalog — the stack that runs on the AWS EC2 host (staging + production).
+#
+# Lives at /srv/card-catalog/ on the server next to:
+#   Caddyfile      reverse proxy + automatic HTTPS (Let's Encrypt)
+#   images.env     which image tag each environment runs (written by deploy.sh)
+#   prod.env       production secrets: DATABASE_URL (RDS), AUTH_*   (chmod 600)
+#   staging.env    staging secrets, separate database and keys       (chmod 600)
+#
+# Both environments run the same image (ghcr.io/spycebot/card-catalog:<sha>)
+# against their own database on one RDS instance. Only Caddy publishes
+# ports; the app containers are reachable only on the internal network.
+# See ../docs/deployment.md.
+
+name: card-catalog
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  prod:
+    image: ${PROD_IMAGE:?set PROD_IMAGE in images.env}
+    restart: unless-stopped
+    env_file: prod.env
+
+  staging:
+    image: ${STAGING_IMAGE:?set STAGING_IMAGE in images.env}
+    restart: unless-stopped
+    env_file: staging.env
+
+volumes:
+  caddy_data:
+  caddy_config:

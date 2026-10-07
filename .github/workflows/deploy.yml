@@ -1,0 +1,151 @@
+# Continuous delivery for the Card Catalog app.
+#
+# On every merge to main (that touches the app or the workflows):
+#
+#   ci  ──►  build & push image  ──►  staging  ──►  production
+#  (gate)    ghcr.io/…:<sha>          migrate, switch, smoke test (server-side,
+#                                     auto-rollback) + smoke test from outside
+#
+# Production only starts if staging passed its smoke tests. Either deploy
+# rolls itself back to the previous image if its smoke test fails.
+# Manual runs (Actions → Deploy → Run workflow) can redeploy the selected
+# branch's latest commit through the same pipeline, or roll an environment
+# back to its previous image. See docs/release-process.md.
+#
+# AWS access is short-lived: each deploy job assumes the
+# card-catalog-github-deploy role via OIDC (no stored AWS keys), and that
+# role can only run commands on the one app instance through SSM.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "03-test-containerize-and-deploy-an-ai-assisted-app/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "deploy = ship a commit's image; rollback = return an environment to its previous image"
+        type: choice
+        options: [deploy, rollback]
+        default: deploy
+      environment:
+        description: "Which environment (rollback only; deploy always goes staging → production)"
+        type: choice
+        options: [staging, production]
+        default: staging
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false # never interrupt a deploy halfway
+
+permissions:
+  contents: read
+
+env:
+  APP_DIR: 03-test-containerize-and-deploy-an-ai-assisted-app
+  IMAGE: ghcr.io/spycebot/card-catalog
+  AWS_REGION: eu-north-1
+  AWS_ROLE: arn:aws:iam::755400271585:role/card-catalog-github-deploy
+  INSTANCE_ID: i-03608727285d00358
+
+jobs:
+  ci:
+    if: github.event_name == 'push' || inputs.action == 'deploy'
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: ci
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ env.APP_DIR }}
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:main
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  staging:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: staging
+      url: https://staging.cards.terzotech.net
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy to staging (migrate, switch, server-side smoke test)
+        run: ${{ env.APP_DIR }}/deploy/ssm-run.sh ${{ github.sha }} deploy staging ${{ env.IMAGE }}:${{ github.sha }}
+      - name: Smoke test from outside
+        id: smoke
+        run: ${{ env.APP_DIR }}/deploy/smoke.sh https://staging.cards.terzotech.net
+      - name: Roll back staging if the outside smoke test failed
+        if: failure() && steps.smoke.outcome == 'failure'
+        run: ${{ env.APP_DIR }}/deploy/ssm-run.sh ${{ github.sha }} rollback staging
+
+  production:
+    needs: staging
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://cards.terzotech.net
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy to production (migrate, switch, server-side smoke test)
+        run: ${{ env.APP_DIR }}/deploy/ssm-run.sh ${{ github.sha }} deploy prod ${{ env.IMAGE }}:${{ github.sha }}
+      - name: Smoke test from outside
+        id: smoke
+        run: ${{ env.APP_DIR }}/deploy/smoke.sh https://cards.terzotech.net
+      - name: Roll back production if the outside smoke test failed
+        if: failure() && steps.smoke.outcome == 'failure'
+        run: ${{ env.APP_DIR }}/deploy/ssm-run.sh ${{ github.sha }} rollback prod
+
+  rollback:
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'rollback'
+    runs-on: ubuntu-24.04
+    environment:
+      name: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Roll back ${{ inputs.environment }} to its previous image
+        run: |
+          target=${{ inputs.environment == 'production' && 'prod' || 'staging' }}
+          ${{ env.APP_DIR }}/deploy/ssm-run.sh ${{ github.sha }} rollback "$target"

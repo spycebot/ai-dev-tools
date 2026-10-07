@@ -119,6 +119,16 @@ This project is built stepwise, with a commit + push to GitHub after each comple
 
 This is homework assignment 3 for the AI Dev Tools Zoomcamp: testing, containerizing, and deploying the app built in homework 2. Scope per `AGENTS.md` / the [Module 3 assignment](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/blob/main/03-deployment/01-test-containerize-and-deploy-an-ai-assisted-app.md).
 
+> **Revised 2026-10-07 — as built: EC2 + RDS, not ECS Fargate.** The app runs
+> as Docker Compose on a single EC2 instance (Caddy for TLS, separate staging
+> and production containers) against one managed RDS PostgreSQL 17 instance
+> with a database per environment; GitHub Actions will deploy through AWS Systems
+> Manager. Reasons: the Docker work had already moved to a dedicated EC2 box;
+> an ALB alone (~$18/month) would cost more than the whole EC2 setup; and the
+> AWS skills practiced (VPC security groups, IAM roles, RDS, Elastic IPs, OIDC)
+> largely overlap. The ECS design below is kept as the original plan. Current
+> state: [`docs/deployment.md`](../docs/deployment.md).
+
 ### 10.1 Cloud platform: AWS
 
 The course material deploys to AWS; other platforms discussed (Render, Fly.io, Railway) are themselves built on top of AWS/GCP and mainly trade operational convenience (automatic TLS, managed Postgres backups, zero-downtime deploys out of the box) for reduced control over the underlying primitives. AWS was chosen deliberately — the added setup work (VPC, security groups, IAM, ALB) is itself the job-relevant skill being practiced, ahead of an AWS certification goal. See the README's "Requirements Discussion" note for the full reasoning.
