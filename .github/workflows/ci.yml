@@ -18,10 +18,9 @@ on:
     paths:
       - "03-test-containerize-and-deploy-an-ai-assisted-app/**"
       - ".github/workflows/**"
+  # No path filter on PRs: these four checks are required to merge into
+  # main, and a required check that never runs would block the PR forever.
   pull_request:
-    paths:
-      - "03-test-containerize-and-deploy-an-ai-assisted-app/**"
-      - ".github/workflows/**"
   workflow_call:
   workflow_dispatch:
 
