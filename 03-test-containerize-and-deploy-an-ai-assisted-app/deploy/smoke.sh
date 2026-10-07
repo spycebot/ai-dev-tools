@@ -32,7 +32,9 @@ echo "ok  API requires auth"
 
 code=$("${CURL[@]}" -o /dev/null -w '%{http_code}' -H 'content-type: application/json' \
   -d '{"password":"smoke-test-wrong-password"}' "$BASE/api/login")
-[[ $code == 401 ]] || fail "/api/login with a wrong password returned $code, expected 401"
-echo "ok  login rejects a wrong password"
+# 429 is also a pass: the rate limiter (5 failures / 5 min per IP) is part of
+# the auth path, and back-to-back deploys + rollbacks can trip it.
+[[ $code == 401 || $code == 429 ]] || fail "/api/login with a wrong password returned $code, expected 401 (or 429)"
+echo "ok  login rejects a wrong password ($code)"
 
 echo "smoke test passed: $BASE"

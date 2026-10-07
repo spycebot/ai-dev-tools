@@ -25,7 +25,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # github.workflow is the *caller's* name when deploy.yml runs this via
+  # workflow_call, so the deploy's CI gate never cancels (or is cancelled by)
+  # the regular CI run for the same push.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

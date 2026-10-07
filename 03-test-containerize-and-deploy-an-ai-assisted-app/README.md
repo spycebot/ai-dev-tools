@@ -17,7 +17,7 @@ The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) —
 - [x] **3. Containerization** — multi-stage `Dockerfile` (one image serves API + built frontend), `docker-compose.yml` (Postgres 17 + one-shot Alembic `migrate` service + app); see [Running with Docker](#running-with-docker)
 - [x] **4. Continuous integration** — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (repo root): lint + frontend build, unit tests, integration tests on Postgres 17, container build + Compose smoke test; see [`docs/testing.md`](./docs/testing.md#ci)
 - [x] **5. Deployment** — live at **https://cards.terzotech.net** (staging: **https://staging.cards.terzotech.net**): Docker Compose on AWS EC2 behind Caddy (Let's Encrypt), managed **RDS PostgreSQL 17**, migrations before every switch; see [`docs/deployment.md`](./docs/deployment.md)
-- [ ] **6. Continuous delivery** — `.github/workflows/deploy.yml`, staging/production, smoke tests, rollback
+- [x] **6. Continuous delivery** — [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml): merge to `main` → CI → image to GHCR → staging → production, each with migrations, a server-side and an outside smoke test, and automatic rollback; deploys run through AWS Systems Manager with GitHub OIDC (no stored AWS keys). See [`docs/release-process.md`](./docs/release-process.md)
 
 ## Feature Summary
 
@@ -60,12 +60,14 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 │   ├── Caddyfile                  # HTTPS + hostname routing
 │   ├── deploy.sh                  # migrate → switch → smoke test → auto-rollback
 │   ├── smoke.sh                   # post-deploy smoke test
+│   ├── ssm-run.sh                 # GitHub Actions → SSM → deploy.sh on the host
 │   └── set-password.sh            # set/rotate the login password (hash only)
 ├── _docs/
 │   └── specs.md       # Full product specification (app in §1-9, deployment in §10-11)
 ├── docs/               # Homework 3 deliverables
 │   ├── testing.md      # Test suite structure + why Postgres is provisioned the way it is
-│   └── deployment.md   # AWS architecture, server layout, operations, rebuild steps, cost
+│   ├── deployment.md   # AWS architecture, server layout, operations, rebuild steps, cost
+│   └── release-process.md  # PR → CI → staging → production, smoke tests, rollback, migrations policy
 ├── frontend/          # React + Vite app
 │   ├── vite.config.js        # Dev server + /api → backend proxy
 │   ├── .env.example          # VITE_BACKEND_URL (proxy target) override
@@ -285,6 +287,8 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **Requirements discussion: EC2 + RDS instead of ECS Fargate.** The original spec (`_docs/specs.md` §10) planned ECS Fargate behind an Application Load Balancer. By the time deployment came up, the Docker work had already moved to a dedicated EC2 instance, and an ALB alone costs more per month than that whole instance. Decision: Docker Compose on the EC2 box (Caddy for TLS, separate staging and production containers), with **RDS PostgreSQL** still providing the managed database the homework asks for — one instance, one database and login role per environment, so staging can't touch production data. Full writeup in [`docs/deployment.md`](./docs/deployment.md).
 - **Cloudflare's proxy blocks Let's Encrypt.** `terzotech.net`'s DNS is on Cloudflare. With the new records left proxied (orange cloud), they resolved to Cloudflare's edge (`188.114.96.x`), so Caddy's certificate challenge reached Cloudflare instead of the server and failed. Cloudflare also warned that its free certificate doesn't cover a two-level name like `staging.cards`, and suggested the paid Total TLS feature. Neither applies once the records are **DNS only** (grey cloud): visitors connect straight to the server and Caddy's own Let's Encrypt certificate covers each name. Caddy was stopped while DNS was being fixed, so repeated failed challenges wouldn't run into Let's Encrypt's rate limit.
 - **Attaching an Elastic IP drops your SSH session.** Associating the Elastic IP replaces the instance's public IP immediately. The agent session survived because it runs inside `tmux`; reconnect to the new IP and `tmux attach`.
+- **Deploying without opening SSH to the internet.** GitHub-hosted runners come from thousands of changing IP addresses, and the instance only allows SSH from the owner's IP. Rather than opening port 22 to everyone or running a self-hosted runner on a public repo (GitHub warns that pull requests from forks could run code on it), the deploy jobs log into AWS through GitHub's OIDC provider and run `deploy.sh` via **AWS Systems Manager** `send-command`. The IAM role trusts only this repo's `staging` and `production` GitHub environments, and can only send commands to the one app instance.
+- **The smoke test can trip the login rate limiter.** Each smoke test sends one deliberately wrong password. A few deploys and rollbacks within five minutes would hit the 5-failures-per-IP lockout, and the endpoint would answer `429` instead of `401`. `smoke.sh` accepts either; both prove the auth path is working.
 - **Git lives one level up.** This project's `.git` repository and `.gitignore` live in the parent directory (`/var/www/terzotech.net/ai-dev-tools/`), not in this folder. All git operations (status, add, commit, push) for this project are run from, or relative to, that parent directory rather than from `02-ai-assisted-full-stack-app/` itself.
 - **AGENTS.md takes precedence over the published homework instructions** where the two differ (for example, the homework assumes `.gitignore`/`.git` live inside the project folder — here they live in the parent repo instead).
 - **Spec-first workflow.** Before any code was written, the product specification was developed interactively (feature scope, data model, interaction choices, and the app name "Card Catalog" were all decided through a Q&A session) and captured in `_docs/specs.md`, per the course's spec-first methodology.
