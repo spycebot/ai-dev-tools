@@ -94,6 +94,11 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+      - name: Show OIDC claims (sub, aud, iss; never the token)
+        run: |
+          curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" |
+          python3 -c 'import base64,json,sys; t=json.load(sys.stdin)["value"].split(".")[1]; c=json.loads(base64.urlsafe_b64decode(t+"=="*2)); print({k:c.get(k) for k in ("sub","aud","iss","environment","ref")})'
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE }}
@@ -118,6 +123,11 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+      - name: Show OIDC claims (sub, aud, iss; never the token)
+        run: |
+          curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" |
+          python3 -c 'import base64,json,sys; t=json.load(sys.stdin)["value"].split(".")[1]; c=json.loads(base64.urlsafe_b64decode(t+"=="*2)); print({k:c.get(k) for k in ("sub","aud","iss","environment","ref")})'
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE }}
@@ -141,6 +151,11 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+      - name: Show OIDC claims (sub, aud, iss; never the token)
+        run: |
+          curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" |
+          python3 -c 'import base64,json,sys; t=json.load(sys.stdin)["value"].split(".")[1]; c=json.loads(base64.urlsafe_b64decode(t+"=="*2)); print({k:c.get(k) for k in ("sub","aud","iss","environment","ref")})'
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE }}
