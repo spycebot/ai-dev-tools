@@ -24,7 +24,7 @@ for a in "$@"; do
 done
 
 remote=$(cat <<EOF
-set -euo pipefail
+set -eu   # SSM runs this with /bin/sh (dash): no pipefail
 cd /srv/card-catalog
 for f in docker-compose.server.yml Caddyfile deploy.sh smoke.sh set-password.sh; do
   curl -fsSL --retry 3 "$raw/\$f" -o "\$f.new"
