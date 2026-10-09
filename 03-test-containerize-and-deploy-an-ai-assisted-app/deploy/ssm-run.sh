@@ -46,7 +46,7 @@ params=$(python3 -c 'import json,sys; print(json.dumps({"commands": [sys.stdin.r
 cmd_id=$(aws ssm send-command \
   --instance-ids "$INSTANCE_ID" \
   --document-name AWS-RunShellScript \
-  --comment "card-catalog $* @ ${sha:0:7}" \
+  --comment "card-catalog ${1:-} ${2:-} @ ${sha:0:7}" \
   --parameters "$params" \
   --query Command.CommandId --output text)
 echo "SSM command $cmd_id: deploy.sh $*"
