@@ -62,6 +62,45 @@ Everything lives in `/srv/card-catalog/` (owned by `ubuntu`, mode `750`):
 RDS admin credentials and the per-environment database URLs are kept in
 `~/.card-catalog/` (mode `600`), outside the web-facing directory.
 
+## How GitHub Actions reaches the server
+
+Deploys don't use SSH or stored AWS keys. Each deploy job in
+[`deploy.yml`](../../.github/workflows/deploy.yml) logs into AWS with a
+short-lived GitHub OIDC token, then asks AWS Systems Manager (SSM) to run
+[`deploy/ssm-run.sh`](../deploy/ssm-run.sh)'s script on the instance.
+
+| Piece | Setting |
+|---|---|
+| IAM identity provider | `token.actions.githubusercontent.com`, audience `sts.amazonaws.com` |
+| IAM role | `card-catalog-github-deploy`; permissions: `ssm:SendCommand` on this one instance with the `AWS-RunShellScript` document, plus `ssm:GetCommandInvocation` / `ListCommandInvocations` |
+| EC2 instance role | `card-catalog-ec2` includes `AmazonSSMManagedInstanceCore`, so the SSM agent can receive commands |
+| GitHub environments | `staging`, `production`, both restricted to protected branches (`main`) |
+
+The role's trust policy only accepts tokens from this repository's two
+environments. **This repository uses GitHub's immutable OIDC subject**, which
+puts the owner's and repository's numeric IDs into `sub`, so the condition is:
+
+```json
+"StringEquals": {
+  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+  "token.actions.githubusercontent.com:sub": [
+    "repo:spycebot@8616624/ai-dev-tools@1354510999:environment:staging",
+    "repo:spycebot@8616624/ai-dev-tools@1354510999:environment:production"
+  ]
+}
+```
+
+The familiar `repo:<owner>/<repo>:environment:<name>` form is refused with
+`Not authorized to perform sts:AssumeRoleWithWebIdentity`. To check which form
+a repository uses:
+
+```bash
+gh api repos/<owner>/<repo>/actions/oidc/customization/sub   # see sub_claim_prefix
+```
+
+Each deploy job also logs the token's `sub`, `aud` and `iss` claims (never the
+token itself) just before it logs into AWS, so a mismatch shows up in the job log.
+
 ## Day-to-day operations
 
 ```bash
@@ -98,6 +137,9 @@ second copy:
 6. **Host**: copy `deploy/*` to `/srv/card-catalog/`, write `prod.env` and
    `staging.env` (mode `600`, a different `AUTH_SECRET_KEY` each), run
    `./set-password.sh`, then deploy an image with `./deploy.sh deploy`.
+7. **CI/CD access**: the IAM identity provider, the
+   `card-catalog-github-deploy` role and the GitHub environments, as in
+   [How GitHub Actions reaches the server](#how-github-actions-reaches-the-server).
 
 ## Cost
 
