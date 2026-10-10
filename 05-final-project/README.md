@@ -4,6 +4,8 @@ A mini Kanban board for tracking personal tasks across three stages — **To Do*
 
 This is the **final project** for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course ([project criteria](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project)). It grew out of the course homework: the app was built in homework 2, tested, containerized and deployed in homework 3, and given an agent extension pack in Module 5. Everything now lives in this folder (`05-final-project/`, formerly `03-test-containerize-and-deploy-an-ai-assisted-app/`). The entire application — spec, frontend, backend, database, deployment infrastructure and agent tooling — is built end-to-end with an AI coding agent (Claude Code), in stepwise fashion, with each step reviewed and merged through a pull request.
 
+How the agent was directed, reviewed and checked, including its mistakes, is written up in [`docs/ai-workflow.md`](./docs/ai-workflow.md).
+
 The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) — §1–9 cover the app itself (carried over from homework 2), §10–11 cover the homework 3 deployment architecture. Read that document for complete functional requirements, the data model, and deployment design details — this README focuses on what the app is, how it's built, and how to run it.
 
 ## Status
@@ -70,6 +72,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── _docs/
 │   └── specs.md       # Full product specification (app in §1-9, deployment in §10-11)
 ├── docs/
+│   ├── ai-workflow.md  # How the AI agent was used, reviewed and verified (and where it went wrong)
 │   ├── testing.md      # Test suite structure + why Postgres is provisioned the way it is
 │   ├── deployment.md   # AWS architecture, server layout, operations, rebuild steps, cost
 │   ├── release-process.md  # PR → CI → staging → production, smoke tests, rollback, migrations policy
