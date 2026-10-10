@@ -2,7 +2,7 @@
 
 A mini Kanban board for tracking personal tasks across three stages — **To Do**, **In Progress**, and **Done** — styled after the ["living paper"](https://shannonware.com) design language: an old computer-manual look built from index cards on aged paper.
 
-This is homework assignment 3 for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course: testing, containerizing, and deploying the app built in homework 2. The entire application — spec, frontend, backend, database, and now deployment infrastructure — is being built end-to-end with an AI coding agent (Claude Code), in stepwise fashion, with a commit + push after each completed step.
+This is the **final project** for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course ([project criteria](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project)). It grew out of the course homework: the app was built in homework 2, tested, containerized and deployed in homework 3, and given an agent extension pack in Module 5. Everything now lives in this folder (`05-final-project/`, formerly `03-test-containerize-and-deploy-an-ai-assisted-app/`). The entire application — spec, frontend, backend, database, deployment infrastructure and agent tooling — is built end-to-end with an AI coding agent (Claude Code), in stepwise fashion, with each step reviewed and merged through a pull request.
 
 The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) — §1–9 cover the app itself (carried over from homework 2), §10–11 cover the homework 3 deployment architecture. Read that document for complete functional requirements, the data model, and deployment design details — this README focuses on what the app is, how it's built, and how to run it.
 
@@ -47,8 +47,13 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ## Project Structure
 
 ```
-03-test-containerize-and-deploy-an-ai-assisted-app/
+05-final-project/
 ├── AGENTS.md          # Instructions for the AI coding agent building this project
+├── CLAUDE.md          # Claude Code entry point (imports AGENTS.md)
+├── .mcp.json          # Registers the card-catalog-ops MCP server
+├── .claude/           # Live agent config: skill, subagent, secrets-write hook
+├── mcp-server/        # card-catalog-ops MCP server: run tests, check API contract, lint
+├── plugins/           # ai-devtools-agent-pack: installable skill + subagent + hook
 ├── README.md          # This file
 ├── openapi.yaml       # REST contract between frontend and backend (source of truth)
 ├── Dockerfile         # Multi-stage build: frontend → backend deps → slim runtime serving both
@@ -64,10 +69,13 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 │   └── set-password.sh            # set/rotate the login password (hash only)
 ├── _docs/
 │   └── specs.md       # Full product specification (app in §1-9, deployment in §10-11)
-├── docs/               # Homework 3 deliverables
+├── docs/
 │   ├── testing.md      # Test suite structure + why Postgres is provisioned the way it is
 │   ├── deployment.md   # AWS architecture, server layout, operations, rebuild steps, cost
-│   └── release-process.md  # PR → CI → staging → production, smoke tests, rollback, migrations policy
+│   ├── release-process.md  # PR → CI → staging → production, smoke tests, rollback, migrations policy
+│   ├── agent-extension-pack.md  # Module 5 requirement → file map
+│   ├── permissions.md  # What each agent capability may and may not do
+│   └── agent-demo.md   # Six-step agent demo walkthrough
 ├── frontend/          # React + Vite app
 │   ├── vite.config.js        # Dev server + /api → backend proxy
 │   ├── .env.example          # VITE_BACKEND_URL (proxy target) override

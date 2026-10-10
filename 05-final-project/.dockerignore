@@ -11,3 +11,6 @@
 frontend/dist
 .claude
 .mcp.json
+# Agent tooling: not part of the app image
+mcp-server
+plugins

@@ -2,7 +2,7 @@
 
 Portable instructions for any coding agent (Claude Code, Codex, or
 equivalent) working in this repo — added as part of the Module 5 "Agent
-Extension Pack" (`../04-agent-capabilities/`). The homework-process notes
+Extension Pack" (`mcp-server/`, `plugins/`, `.claude/`; map in `docs/agent-extension-pack.md`). The homework-process notes
 below this section are specific to how this app was originally built;
 this section is the durable reference for working in it going forward.
 
@@ -38,13 +38,13 @@ keeps the original field names. Card/board tests are parametrized over both
 in `backend/.env` (git-ignored), never in source or the database — the
 server refuses to start without them. Never print, log, or commit `.env`
 contents, `card_catalog.db`, or a real session cookie value. The MCP server
-and subagent in `../04-agent-capabilities/` are read-only / test-only by
-design — see `../04-agent-capabilities/docs/permissions.md` before granting
+and subagent in `mcp-server/` and `.claude/agents/` are read-only / test-only by
+design — see `docs/permissions.md` before granting
 either more than that.
 
 -----
 
-The work for this project is done in the directory /var/www/terzotech.net/ai-dev-tools/03-test-containerize-and-deploy-an-ai-assisted-app . The Git information is located in the parent directory, at /var/www/terzotech.net/ai-dev-tools/ . 
+The work for this project is done in the directory `05-final-project/` of the `ai-dev-tools` repository (originally `03-test-containerize-and-deploy-an-ai-assisted-app/`; moved for the course final project). The Git information is located in the parent directory, the repository root. 
 
 For homework assignment 3 of the AI Dev Tools course, we containerise and deploy the mini Kanban board (also referred to as 'this software project'). This is an end-to-end application built with an AI agent that includes a Node.js frontend, a Python backend, and a database. The database used in development will be SQLite. We must be able to switch to PostgreSQL in production.
 

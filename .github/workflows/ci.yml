@@ -1,4 +1,4 @@
-# CI for the Card Catalog app (03-test-containerize-and-deploy-an-ai-assisted-app).
+# CI for the Card Catalog app (05-final-project, the course final project).
 #
 # Every push and pull request runs four independent jobs; all four are
 # required status checks on `main`, so a PR can't merge unless each passes:
@@ -16,7 +16,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "03-test-containerize-and-deploy-an-ai-assisted-app/**"
+      - "05-final-project/**"
       - ".github/workflows/**"
   # No path filter on PRs: these four checks are required to merge into
   # main, and a required check that never runs would block the PR forever.
@@ -35,7 +35,7 @@ permissions:
   contents: read
 
 env:
-  APP_DIR: 03-test-containerize-and-deploy-an-ai-assisted-app
+  APP_DIR: 05-final-project
 
 jobs:
   lint:

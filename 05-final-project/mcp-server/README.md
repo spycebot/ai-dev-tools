@@ -23,10 +23,10 @@ arbitrary-command tool, no `.env` read tool).
 ## Running it standalone
 
 ```bash
-cd 04-agent-capabilities/mcp-server
+cd 05-final-project/mcp-server
 uv run python server.py
 ```
 
 It's registered for Claude Code via
-[`../../03-test-containerize-and-deploy-an-ai-assisted-app/.mcp.json`](../../03-test-containerize-and-deploy-an-ai-assisted-app/.mcp.json),
+[`../.mcp.json`](../.mcp.json),
 so it starts automatically when Claude Code is working in that app directory.

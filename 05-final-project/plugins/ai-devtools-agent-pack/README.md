@@ -8,7 +8,7 @@ module's Agent Extension Pack:
 - `hooks/` — a `PreToolUse` guardrail blocking writes to secrets/database files
 
 The project-specific originals (hardcoded to the Card Catalog app) live in
-`03-test-containerize-and-deploy-an-ai-assisted-app/.claude/`. This plugin
+`05-final-project/.claude/`. This plugin
 generalizes them — placeholder commands/paths instead of this one repo's
 specifics — so they can be installed in a different project instead of
 copy-pasted and hand-edited.

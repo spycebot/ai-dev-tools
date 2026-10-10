@@ -1,7 +1,7 @@
 # Demo script
 
 Module 5's suggested demo, run against this pack. All commands assume
-`cd 03-test-containerize-and-deploy-an-ai-assisted-app` first (the directory
+`cd 05-final-project` first (the directory
 Claude Code needs to be working in for the project-level config to load).
 
 ## 1. The agent reads the project instructions
@@ -44,7 +44,7 @@ message from `block-secrets-write.py`, before any file is touched.
 
 ## 6. The student reviews the final diff
 
-`git status` / `git diff` from the repo root
-(`/var/www/terzotech.net/ai-dev-tools/`) to confirm only the intended
+`git status` / `git diff` from the repository root
+(the parent of `05-final-project/`) to confirm only the intended
 test-break/revert and API-change-for-demo edits exist, then discard them —
 none of steps 2–5 above should be left as real changes to the app.

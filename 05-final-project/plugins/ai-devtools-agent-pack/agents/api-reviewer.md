@@ -10,7 +10,7 @@ run anything beyond read-only checks (running the existing test suite is
 fine; writing files is not).
 
 This is a generalized version of the project-specific reviewer at
-`03-test-containerize-and-deploy-an-ai-assisted-app/.claude/agents/api-reviewer.md`.
+`05-final-project/.claude/agents/api-reviewer.md`.
 When adapting this plugin to a new project, fill in the project's actual
 scope and checks below.
 
