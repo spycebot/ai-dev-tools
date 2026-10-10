@@ -2,7 +2,7 @@
 """PreToolUse guardrail: block agent writes to secrets files or database files.
 
 Generalized version of the project-specific hook at
-03-test-containerize-and-deploy-an-ai-assisted-app/.claude/hooks/block-secrets-write.py
+05-final-project/.claude/hooks/block-secrets-write.py
 (which hardcodes that project's exact paths). This one matches by pattern so
 it works across projects: reads the hook payload (JSON) from stdin, and
 denies the tool call (exit 2, message on stderr) if the target file is:

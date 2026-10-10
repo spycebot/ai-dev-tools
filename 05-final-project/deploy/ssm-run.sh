@@ -14,7 +14,7 @@ set -euo pipefail
 sha=${1:?commit sha}; shift
 : "${INSTANCE_ID:?set INSTANCE_ID}"
 repo=${GITHUB_REPOSITORY:-spycebot/ai-dev-tools}
-raw="https://raw.githubusercontent.com/$repo/$sha/03-test-containerize-and-deploy-an-ai-assisted-app/deploy"
+raw="https://raw.githubusercontent.com/$repo/$sha/05-final-project/deploy"
 
 # Arguments are validated here, so nothing user-controlled is spliced into
 # the remote shell beyond these fixed shapes.

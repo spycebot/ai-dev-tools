@@ -5,9 +5,9 @@
       "args": [
         "run",
         "--project",
-        "../04-agent-capabilities/mcp-server",
+        "mcp-server",
         "python",
-        "../04-agent-capabilities/mcp-server/server.py"
+        "mcp-server/server.py"
       ]
     }
   }

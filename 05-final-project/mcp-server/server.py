@@ -1,7 +1,7 @@
 """Card Catalog Ops MCP server.
 
 Exposes a deliberately small, scoped set of tools to a coding agent working
-on the Card Catalog app (../../03-test-containerize-and-deploy-an-ai-assisted-app/):
+on the Card Catalog app (the parent directory, 05-final-project/):
 running the existing test suites and checking the API/openapi contract.
 
 Design boundary (see ../docs/permissions.md for the full rationale): every
@@ -19,7 +19,7 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
-APP_ROOT = Path(__file__).resolve().parent.parent.parent / "03-test-containerize-and-deploy-an-ai-assisted-app"
+APP_ROOT = Path(__file__).resolve().parent.parent
 BACKEND_ROOT = APP_ROOT / "backend"
 FRONTEND_ROOT = APP_ROOT / "frontend"
 

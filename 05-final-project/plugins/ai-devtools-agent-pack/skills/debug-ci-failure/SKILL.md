@@ -6,7 +6,7 @@ description: Triage a failing backend test run (unit or integration) by classify
 # Debug a test-suite failure
 
 A general triage procedure, generalized from the project-specific version at
-`03-test-containerize-and-deploy-an-ai-assisted-app/.claude/skills/debug-ci-failure/SKILL.md`.
+`05-final-project/.claude/skills/debug-ci-failure/SKILL.md`.
 When adapting this plugin to a new project, replace the commands and
 "known-gotcha" grep below with that project's equivalents.
 

@@ -22,7 +22,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "03-test-containerize-and-deploy-an-ai-assisted-app/**"
+      - "05-final-project/**"
       - ".github/workflows/**"
   workflow_dispatch:
     inputs:
@@ -45,7 +45,7 @@ permissions:
   contents: read
 
 env:
-  APP_DIR: 03-test-containerize-and-deploy-an-ai-assisted-app
+  APP_DIR: 05-final-project
   IMAGE: ghcr.io/spycebot/card-catalog
   AWS_REGION: eu-north-1
   AWS_ROLE: arn:aws:iam::755400271585:role/card-catalog-github-deploy
