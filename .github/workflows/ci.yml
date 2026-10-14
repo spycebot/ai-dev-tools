@@ -1,12 +1,13 @@
 # CI for the Card Catalog app (05-final-project, the course final project).
 #
-# Every push and pull request runs four independent jobs; all four are
+# Every push and pull request runs five independent jobs. The first four are
 # required status checks on `main`, so a PR can't merge unless each passes:
 #
 #   lint               oxlint over the frontend
 #   unit-tests         backend pytest, unit/store layer (no services)
 #   integration-tests  backend pytest against a real, ephemeral Postgres 17
 #   container          docker build + a Compose smoke test of the built image
+#   security-scan      Semgrep + pip-audit (see 05-final-project/security-audit/)
 #
 # deploy.yml reuses this workflow (workflow_call) as its gate before deploying.
 
@@ -44,8 +45,8 @@ jobs:
       run:
         working-directory: ${{ env.APP_DIR }}/frontend
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -60,8 +61,8 @@ jobs:
       run:
         working-directory: ${{ env.APP_DIR }}/backend
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
           cache-dependency-glob: ${{ env.APP_DIR }}/backend/uv.lock
@@ -74,7 +75,7 @@ jobs:
       run:
         working-directory: ${{ env.APP_DIR }}/backend
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Same major version as production (RDS Postgres 17). The runner image
       # ships an older bundled Postgres, so install 17 from the PGDG apt repo;
       # pytest-postgresql then boots a throwaway cluster from its binaries
@@ -84,7 +85,7 @@ jobs:
           sudo apt-get install -y -q postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y -q postgresql-17
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
           cache-dependency-glob: ${{ env.APP_DIR }}/backend/uv.lock
@@ -99,9 +100,9 @@ jobs:
       run:
         working-directory: ${{ env.APP_DIR }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/build-push-action@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ${{ env.APP_DIR }}
           tags: card-catalog:local
@@ -112,7 +113,7 @@ jobs:
       # Alembic migrate + app) and prove it serves: health, the frontend,
       # a login, and an authenticated API call. Throwaway credentials only.
       - name: Compose smoke test
-        run: |
+        run: | # nosemgrep: yaml.github-actions.security.gha-curl-pipe-shell.gha-curl-pipe-shell -- curl output goes to grep or a fixed python3 -c, never to a shell (see 05-final-project/security-audit/)
           set -euo pipefail
           HASH=$(docker run --rm card-catalog:local python -c \
             "import bcrypt; print(bcrypt.hashpw(b'ci-smoke-password', bcrypt.gensalt(4)).decode())")
@@ -132,3 +133,20 @@ jobs:
       - name: Compose logs on failure
         if: failure()
         run: docker compose logs
+
+  # Deterministic layer of the security audit (05-final-project/security-audit/):
+  # Semgrep over the app and these workflows, plus known-vulnerability checks
+  # on the backend's runtime dependencies. Any new finding fails the job; fix
+  # it, or annotate it with `nosemgrep: <rule> -- <reason>` and record why.
+  security-scan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - name: Semgrep
+        run: ${{ env.APP_DIR }}/security-audit/run-semgrep.sh --error
+      - name: pip-audit (backend runtime dependencies)
+        working-directory: ${{ env.APP_DIR }}/backend
+        run: |
+          uv export --frozen --no-dev --no-hashes --no-emit-project -q > "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit==2.10.1 -r "$RUNNER_TEMP/requirements.txt" --no-deps --disable-pip

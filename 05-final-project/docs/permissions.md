@@ -35,8 +35,9 @@ it; the worst it can do is run the test suite repeatedly.
 
 A deterministic, code-level backstop — not a suggestion to a model. It
 inspects the `file_path` of every `Write`/`Edit`/`MultiEdit` call before it
-executes and denies (exit code 2) any write to `backend/.env` or
-`backend/card_catalog.db` (project-specific version) / any `.env*` or
+executes and denies (exit code 2) any write to a `.env`, the server's
+`prod.env`/`staging.env`, or `backend/card_catalog.db` (project-specific
+version; widened by the [security audit](../security-audit/audit-brief.md)) / any `.env*` or
 `*.db`/`*.sqlite*` file (plugin/generalized version). This is enforced by
 Claude Code itself outside the model's control — a model "deciding" to write
 there anyway still gets blocked.

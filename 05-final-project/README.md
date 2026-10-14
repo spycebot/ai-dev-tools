@@ -6,6 +6,8 @@ This is the **final project** for the [AI Dev Tools Zoomcamp](https://github.com
 
 How the agent was directed, reviewed and checked, including its mistakes, is written up in [`docs/ai-workflow.md`](./docs/ai-workflow.md).
 
+Security is audited with Semgrep, dependency checks, model review and a human decision on every finding; see [`security-audit/audit-brief.md`](./security-audit/audit-brief.md). The same scans run in CI on every push.
+
 The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) — §1–9 cover the app itself (carried over from homework 2), §10–11 cover the homework 3 deployment architecture. Read that document for complete functional requirements, the data model, and deployment design details — this README focuses on what the app is, how it's built, and how to run it.
 
 ## Status
@@ -56,6 +58,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── .claude/           # Live agent config: skill, subagent, secrets-write hook
 ├── mcp-server/        # card-catalog-ops MCP server: run tests, check API contract, lint
 ├── plugins/           # ai-devtools-agent-pack: installable skill + subagent + hook
+├── security-audit/    # Semgrep + dependency + model-review audits: brief, schema, runs/, capability table, AI tool policy
 ├── README.md          # This file
 ├── openapi.yaml       # REST contract between frontend and backend (source of truth)
 ├── Dockerfile         # Multi-stage build: frontend → backend deps → slim runtime serving both
