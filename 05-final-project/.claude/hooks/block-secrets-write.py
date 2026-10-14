@@ -5,7 +5,10 @@ Registered in .claude/settings.json for Write/Edit/MultiEdit. Reads the hook
 payload (JSON) from stdin, checks the target file path(s), and denies the
 tool call (exit 2, message on stderr) if it touches:
 
-  - backend/.env            (real secrets: AUTH_PASSWORD_HASH, AUTH_SECRET_KEY)
+  - any `.env`              (backend/.env and the Compose .env next to
+                              docker-compose.yml: AUTH_*, POSTGRES_PASSWORD)
+  - prod.env, staging.env   (the server's secrets in /srv/card-catalog/,
+                              which live on the same host as this checkout)
   - backend/card_catalog.db (the dev SQLite database)
 
 `.env.example` is explicitly allowed — it holds no real values. This is a
@@ -19,7 +22,9 @@ from __future__ import annotations
 import json
 import sys
 
-_BLOCKED_SUFFIXES = ("backend/.env", "backend/card_catalog.db")
+# Widened by the 2026-10-14 security audit (security-audit/runs/), which found
+# the Compose .env and the server env files were not covered.
+_BLOCKED_SUFFIXES = ("/.env", "/prod.env", "/staging.env", "backend/card_catalog.db")
 
 
 def _paths_from(tool_input: dict) -> list[str]:

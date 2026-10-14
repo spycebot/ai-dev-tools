@@ -14,3 +14,4 @@ frontend/dist
 # Agent tooling: not part of the app image
 mcp-server
 plugins
+security-audit

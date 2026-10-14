@@ -1,0 +1,13 @@
+{
+  "packages": 72,
+  "vulnerable": [
+    {
+      "name": "source-map-js",
+      "version": "1.2.1",
+      "dev": true,
+      "vulns": [
+        "GHSA-68fv-2mgg-jv7q"
+      ]
+    }
+  ]
+}
