@@ -16,4 +16,10 @@ export default defineConfig({
       '/api': { target: BACKEND_URL, changeOrigin: true },
     },
   },
+  // `npm test` (Vitest): components render in jsdom; fetch is stubbed per
+  // test, so no backend is needed. See src/test/setup.js.
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+  },
 })

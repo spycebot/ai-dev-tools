@@ -3,7 +3,7 @@
 # Every push and pull request runs five independent jobs. The first four are
 # required status checks on `main`, so a PR can't merge unless each passes:
 #
-#   lint               oxlint over the frontend
+#   lint               oxlint + Vitest + production build of the frontend
 #   unit-tests         backend pytest, unit/store layer (no services)
 #   integration-tests  backend pytest against a real, ephemeral Postgres 17
 #   container          docker build + a Compose smoke test of the built image
@@ -53,6 +53,7 @@ jobs:
           cache-dependency-path: ${{ env.APP_DIR }}/frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm test
       - run: npm run build # catches import/syntax errors oxlint doesn't
 
   unit-tests:
