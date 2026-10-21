@@ -8,11 +8,36 @@
     "the deployed staging site (one manual rate-limit test)"
   ],
   "tools": [
-    { "name": "semgrep 1.180.0", "kind": "deterministic", "config": "p/python p/javascript p/typescript p/react p/dockerfile p/github-actions p/secrets (run-semgrep.sh)", "output": "semgrep.json" },
-    { "name": "pip-audit 2.10.1", "kind": "dependency", "config": "backend runtime deps from uv.lock (backend-requirements.txt)", "output": "pip-audit.json" },
-    { "name": "OSV querybatch API", "kind": "dependency", "config": "all 72 packages in frontend/package-lock.json", "output": "osv-frontend.json" },
-    { "name": "claude-opus-5-5 (Claude Code)", "kind": "model-review", "config": "read auth.py, main.py, Dockerfile, deploy/, Caddyfile, mcp-server/, .claude/; prompts in audit-brief.md", "output": "inline" },
-    { "name": "curl against staging", "kind": "manual-test", "config": "7 wrong-password logins, each with a different spoofed X-Forwarded-For", "output": "inline" }
+    {
+      "name": "semgrep 1.180.0",
+      "kind": "deterministic",
+      "config": "p/python p/javascript p/typescript p/react p/dockerfile p/github-actions p/secrets (run-semgrep.sh)",
+      "output": "semgrep.json"
+    },
+    {
+      "name": "pip-audit 2.10.1",
+      "kind": "dependency",
+      "config": "backend runtime deps from uv.lock (backend-requirements.txt)",
+      "output": "pip-audit.json"
+    },
+    {
+      "name": "OSV querybatch API",
+      "kind": "dependency",
+      "config": "all 72 packages in frontend/package-lock.json",
+      "output": "osv-frontend.json"
+    },
+    {
+      "name": "claude-opus-5-5 (Claude Code)",
+      "kind": "model-review",
+      "config": "read auth.py, main.py, Dockerfile, deploy/, Caddyfile, mcp-server/, .claude/; prompts in audit-brief.md",
+      "output": "inline"
+    },
+    {
+      "name": "curl against staging",
+      "kind": "manual-test",
+      "config": "7 wrong-password logins, each with a different spoofed X-Forwarded-For",
+      "output": "inline"
+    }
   ],
   "findings": [
     {
@@ -23,7 +48,10 @@
       "severity": "medium",
       "scanner_severity": "WARNING",
       "count": 19,
-      "locations": [".github/workflows/ci.yml (9)", ".github/workflows/deploy.yml (10)"],
+      "locations": [
+        ".github/workflows/ci.yml (9)",
+        ".github/workflows/deploy.yml (10)"
+      ],
       "evidence": "Every `uses:` pointed at a tag (`@v7`, `@v4`, ...). The deploy jobs hold `id-token: write` (they assume the AWS deploy role) and the build job holds `packages: write`, so a moved tag would run someone else's code with those permissions.",
       "disposition": "fixed",
       "rationale": "Cheap to fix, and the jobs that use these actions can deploy to production.",
@@ -38,7 +66,10 @@
       "severity": "info",
       "scanner_severity": "ERROR",
       "count": 4,
-      "locations": [".github/workflows/ci.yml:115 (Compose smoke test)", ".github/workflows/deploy.yml:98, :127, :155 (Show OIDC claims)"],
+      "locations": [
+        ".github/workflows/ci.yml:115 (Compose smoke test)",
+        ".github/workflows/deploy.yml:98, :127, :155 (Show OIDC claims)"
+      ],
       "evidence": "Read each step. The smoke test pipes to `grep -q` and to a fixed `python3 -c` JSON assertion against the app it just built; the OIDC steps pipe GitHub's own token endpoint into a fixed `python3 -c` that prints five claims. Nothing downloaded is executed as a script.",
       "disposition": "false-positive",
       "rationale": "The rule matches any `curl ... |`; it cannot tell a parser from a shell.",
@@ -53,7 +84,9 @@
       "severity": "low",
       "scanner_severity": "ERROR",
       "count": 1,
-      "locations": [".github/workflows/deploy.yml (rollback job)"],
+      "locations": [
+        ".github/workflows/deploy.yml (rollback job)"
+      ],
       "evidence": "`${{ inputs.environment == 'production' && 'prod' || 'staging' }}` was spliced into the script. The input is a `choice` (staging|production) and the expression only yields the two literals, so it was not exploitable; only repo writers can dispatch the workflow.",
       "disposition": "fixed",
       "rationale": "Not exploitable today, but the pattern is the one that becomes exploitable when someone later changes the input to free text.",
@@ -68,7 +101,9 @@
       "severity": "low",
       "scanner_severity": "HIGH",
       "count": 1,
-      "locations": ["05-final-project/frontend/package-lock.json (dev dependency of postcss, via Vite)"],
+      "locations": [
+        "05-final-project/frontend/package-lock.json (dev dependency of postcss, via Vite)"
+      ],
       "evidence": "Fixed in 1.2.2. It runs only during `npm run build` on our own sources; it is not in the shipped bundle or the runtime image.",
       "disposition": "fixed",
       "rationale": "Build-time only, so low in context, but the fix is a patch bump of a lockfile entry.",
@@ -82,7 +117,9 @@
       "title": "Secrets hook did not cover the Compose .env or the server env files",
       "severity": "medium",
       "count": 1,
-      "locations": ["05-final-project/.claude/hooks/block-secrets-write.py"],
+      "locations": [
+        "05-final-project/.claude/hooks/block-secrets-write.py"
+      ],
       "evidence": "The project hook blocked only `backend/.env` and `backend/card_catalog.db`. The Compose `.env` next to docker-compose.yml holds AUTH_* and POSTGRES_PASSWORD, and /srv/card-catalog/prod.env and staging.env (RDS URL, AUTH_*) are on the same host as this checkout. Tested the widened hook with 8 paths: all 5 secret/data paths exit 2, `.env.example` files and README exit 0.",
       "disposition": "fixed",
       "rationale": "This is the one guardrail that is enforced outside the model; it should cover every secrets file an agent on this host can reach.",
@@ -96,7 +133,10 @@
       "title": "Uvicorn trusts X-Forwarded-For from any address; the login rate limiter keys on it",
       "severity": "low",
       "count": 1,
-      "locations": ["05-final-project/Dockerfile (CMD --forwarded-allow-ips \"*\")", "05-final-project/backend/app/main.py (login)"],
+      "locations": [
+        "05-final-project/Dockerfile (CMD --forwarded-allow-ips \"*\")",
+        "05-final-project/backend/app/main.py (login)"
+      ],
       "evidence": "Manual test against staging: 7 wrong logins, each with a different spoofed X-Forwarded-For, returned 401 x5 then 429 x2. Caddy replaces client-supplied X-Forwarded-* from untrusted clients, and the app containers publish no ports on the server.",
       "disposition": "accepted-risk",
       "rationale": "Not exploitable in the deployed topology. It becomes exploitable if the app is ever exposed without Caddy, or Caddy is configured with trusted_proxies.",
@@ -109,11 +149,15 @@
       "title": "Existing sessions survive a password change and logout",
       "severity": "low",
       "count": 1,
-      "locations": ["05-final-project/backend/app/auth.py", "05-final-project/deploy/set-password.sh"],
+      "locations": [
+        "05-final-project/backend/app/auth.py",
+        "05-final-project/deploy/set-password.sh"
+      ],
       "evidence": "Sessions are stateless signed tokens valid for 30 days. Logout only deletes the browser's cookie; set-password.sh changes AUTH_PASSWORD_HASH but not AUTH_SECRET_KEY, so a stolen cookie keeps working after the password is reset.",
-      "disposition": "deferred",
-      "rationale": "Proposed fix: have set-password.sh also rotate AUTH_SECRET_KEY (signs every browser out). Changes operator-facing behaviour, so it needs the owner's decision.",
-      "decided_by": "proposed: claude-opus-5-5"
+      "disposition": "fixed",
+      "rationale": "Owner approved on 2026-10-21: a password reset should end every session.",
+      "decided_by": "owner (2026-10-21)",
+      "fix": "deploy/set-password.sh now also writes a new random AUTH_SECRET_KEY (openssl rand -hex 32, different per environment) before restarting the containers. Tested on scratch env files: one hash and one key per file, other lines kept, keys differ between prod and staging, hash verifies; mismatch and short passwords change nothing. The same change fixed the prompt echoing the password (getpass inside `docker run -i` can't disable echo; the script now turns echo off on the host terminal)."
     },
     {
       "id": "F08",
@@ -122,7 +166,9 @@
       "title": "No Content-Security-Policy or frame protection on the site",
       "severity": "low",
       "count": 1,
-      "locations": ["05-final-project/deploy/Caddyfile"],
+      "locations": [
+        "05-final-project/deploy/Caddyfile"
+      ],
       "evidence": "Response headers include HSTS, nosniff and Referrer-Policy, but no CSP or X-Frame-Options, so the board can be framed by another site (clickjacking). React escapes output and the frontend has no innerHTML/eval sinks (grep), which limits XSS impact.",
       "disposition": "deferred",
       "rationale": "Proposed fix: `X-Frame-Options DENY` and a CSP with `frame-ancestors 'none'` in the common Caddy snippet. Needs a Caddy reload on the server and a check that the Vite build works under the CSP.",
@@ -135,7 +181,10 @@
       "title": "Container base images referenced by mutable tags",
       "severity": "low",
       "count": 4,
-      "locations": ["05-final-project/Dockerfile (node:22-slim, python:3.13-slim, ghcr.io/astral-sh/uv:0.12)", "05-final-project/deploy/docker-compose.server.yml (caddy:2-alpine)"],
+      "locations": [
+        "05-final-project/Dockerfile (node:22-slim, python:3.13-slim, ghcr.io/astral-sh/uv:0.12)",
+        "05-final-project/deploy/docker-compose.server.yml (caddy:2-alpine)"
+      ],
       "evidence": "Same class as F01 for images. The app image itself is deployed by commit SHA, so a release is reproducible once built; the base images are resolved at build time.",
       "disposition": "deferred",
       "rationale": "Pinning by digest needs Dependabot's docker ecosystem to stay current; worth doing together with F08's Caddy change.",
@@ -148,7 +197,9 @@
       "title": "Deploy jobs still run the OIDC-claims debug step",
       "severity": "info",
       "count": 3,
-      "locations": [".github/workflows/deploy.yml (staging, production, rollback)"],
+      "locations": [
+        ".github/workflows/deploy.yml (staging, production, rollback)"
+      ],
       "evidence": "The step requests an ID token and prints only sub/aud/iss/environment/ref, never the token. It was added to diagnose the trust-policy mismatch, which is fixed.",
       "disposition": "accepted-risk",
       "rationale": "Kept on purpose: it is the fastest way to diagnose the next trust-policy failure (docs/deployment.md). Remove it if the deploy jobs ever need to be minimal.",
@@ -161,7 +212,9 @@
       "title": "/docs and /openapi.json are public",
       "severity": "info",
       "count": 1,
-      "locations": ["05-final-project/backend/app/main.py (FastAPI defaults)"],
+      "locations": [
+        "05-final-project/backend/app/main.py (FastAPI defaults)"
+      ],
       "evidence": "https://cards.terzotech.net/docs returns 200. Every card route still requires a session; the same contract is in the public repo as openapi.yaml.",
       "disposition": "accepted-risk",
       "rationale": "Reveals nothing that is not already public, and it is useful to reviewers.",
@@ -174,7 +227,9 @@
       "title": "Rate limiter never forgets an IP it has seen",
       "severity": "info",
       "count": 1,
-      "locations": ["05-final-project/backend/app/auth.py (RateLimiter)"],
+      "locations": [
+        "05-final-project/backend/app/auth.py (RateLimiter)"
+      ],
       "evidence": "Keys are pruned lazily per IP but never evicted, so memory grows with the number of distinct client addresses that fail a login. Bounded in practice by one small app behind Caddy.",
       "disposition": "accepted-risk",
       "rationale": "Documented single-instance limit (README); a restart clears it.",

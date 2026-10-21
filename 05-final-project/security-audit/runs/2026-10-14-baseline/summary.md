@@ -30,7 +30,7 @@ in `deploy.yml`, and the model review read those steps instead.
 | F03 | low | Workflow input spliced into a shell script (not exploitable: choice input) | **fixed**: passed via env + `case` |
 | F04 | low | `source-map-js` 1.2.1 DoS advisory (build-time only) | **fixed**: 1.2.2 |
 | F06 | low | Uvicorn trusts any `X-Forwarded-For` | accepted: Caddy strips it (tested) |
-| F07 | low | Sessions survive a password reset and logout | **deferred**: proposal below |
+| F07 | low | Sessions survive a password reset and logout | **fixed** 2026-10-21: reset rotates the session key |
 | F08 | low | No CSP / frame protection | **deferred**: proposal below |
 | F09 | low | Base images by mutable tag | **deferred**: with F08 |
 | F02 | info | 4 × `curl … \|` flagged as curl-pipe-shell | false positive, annotated |
@@ -43,10 +43,9 @@ positives annotated in place.
 
 ## Decisions for the owner
 
-- **F07:** make `deploy/set-password.sh` also rotate `AUTH_SECRET_KEY`, so
-  a password reset signs every browser out. Until then, a session cookie
-  taken before a reset keeps working for up to 30 days. The 2026-10-12
-  password reset did not end existing sessions.
+- ~~**F07:**~~ Done 2026-10-21 (owner approved): `deploy/set-password.sh`
+  now rotates `AUTH_SECRET_KEY` too, so a reset signs every browser out.
+  Logout still only clears the cookie in that browser.
 - **F08 + F09:** add `X-Frame-Options DENY` and a CSP to the Caddyfile,
   and pin the base images by digest, in one PR that reloads Caddy on the
   server.
