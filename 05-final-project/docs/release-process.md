@@ -113,11 +113,12 @@ path.
 Secrets aren't part of a release. They live in `/srv/card-catalog/prod.env`
 and `staging.env` on the host:
 
-- **Login password:** `/srv/card-catalog/set-password.sh` (prompts, stores
-  only the bcrypt hash, restarts the app containers).
-- **Anything else** (e.g. `AUTH_SECRET_KEY`): edit the file, then
+- **Login password:** `/srv/card-catalog/set-password.sh` (prompts with
+  echo off, stores only the bcrypt hash, replaces `AUTH_SECRET_KEY` so every
+  existing session ends, and restarts the app containers). Run it whenever a
+  session cookie or the password may have leaked.
+- **Anything else:** edit the file, then
   `docker compose --env-file images.env -f docker-compose.server.yml up -d --force-recreate --no-deps prod`.
-  Changing `AUTH_SECRET_KEY` logs everyone out.
 
 ## Checklist for a release with a migration
 

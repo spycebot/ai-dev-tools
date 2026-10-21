@@ -79,7 +79,7 @@ for five minutes.
 
 | Run | Commit | Scanner hits | Findings (fixed / FP / accepted / deferred) |
 |---|---|---|---|
-| [2026-10-14-baseline](runs/2026-10-14-baseline/summary.md) | `ee82e14` | 24 Semgrep, 0 pip-audit, 1 OSV | 12 (4 / 1 / 4 / 3) |
+| [2026-10-14-baseline](runs/2026-10-14-baseline/summary.md) | `ee82e14` | 24 Semgrep, 0 pip-audit, 1 OSV | 12 (5 / 1 / 4 / 2) |
 
 ## Related
 

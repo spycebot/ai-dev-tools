@@ -55,7 +55,7 @@ Everything lives in `/srv/card-catalog/` (owned by `ubuntu`, mode `750`):
 | `Caddyfile` | [`deploy/`](../deploy/Caddyfile) | Hostnames → containers, security headers |
 | `deploy.sh` | [`deploy/`](../deploy/deploy.sh) | Deploy, roll back, status (see [release process](./release-process.md)) |
 | `smoke.sh` | [`deploy/`](../deploy/smoke.sh) | Post-deploy smoke test, through the real HTTPS front door |
-| `set-password.sh` | [`deploy/`](../deploy/set-password.sh) | Set or rotate the login password (prompts, stores only the hash) |
+| `set-password.sh` | [`deploy/`](../deploy/set-password.sh) | Set or rotate the login password (prompts, stores only the hash) and the session key, which signs every browser out |
 | `images.env` | written by `deploy.sh` | Current and previous image for each environment |
 | `prod.env`, `staging.env` | created once by hand, mode `600` | `DATABASE_URL`, `AUTH_PASSWORD_HASH`, `AUTH_SECRET_KEY`, `AUTH_COOKIE_SECURE=true`, `CORS_ORIGINS` |
 
@@ -108,7 +108,7 @@ cd /srv/card-catalog
 ./deploy.sh status                                  # which image each environment runs
 docker compose --env-file images.env -f docker-compose.server.yml logs -f prod
 ./smoke.sh https://cards.terzotech.net              # re-run the smoke test any time
-./set-password.sh                                   # rotate the login password (both envs)
+./set-password.sh                                   # new password + session key (both envs; signs everyone out)
 ```
 
 Normal releases don't happen here by hand: merging to `main` triggers
