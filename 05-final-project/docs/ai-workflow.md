@@ -104,6 +104,8 @@ Nothing reaches production on the agent's word alone:
 | An SSM command comment over AWS's 100-character limit; then SSM running the remote script with `dash`, which rejected `set -o pipefail` | The next two deploy attempts | One-line fixes (PRs #3 and #4), each verified by the following deploy |
 | **The agent worked from the Module 3 lesson page, not the graded homework**, which was a different exercise (Kubernetes with `kind`) | Noticed late, when checking what to submit | The work became this final project; the graded homework was skipped. Lesson: read the grading page first. |
 | The agent told the developer a pasted token wouldn't be echoed in the terminal; it was | The developer | Corrected immediately. Lesson: don't assert tool behaviour you haven't checked. |
+| **`set-password.sh` echoed the password.** `getpass` inside `docker run -i` has no terminal, so it fell back to echoing, while the docs said "no-echo" | Testing the script in a pseudo-terminal while fixing audit finding F07 | Echo turned off on the host terminal (PR #22) |
+| **Dropping a card on its own slot moved it to the bottom of the column.** dnd-kit reports the dragged card as its own drop target; the handler didn't expect that | The first frontend unit tests, once the drop logic was pulled into `src/board.js` | One guard in `planMove`, with a regression test |
 
 The pattern: the agent's code was usually right first time in the parts that
 tests covered, and wrong at the edges tests didn't reach, like cloud identity,
@@ -118,9 +120,9 @@ guessing a second time.
   credentials that can only send SSM commands to the one instance. The
   GitHub token was fine-grained and scoped up one permission at a time
   (pull requests, then actions) as each need came up.
-- **Secrets never pass through the agent.** The login password is typed into
-  a no-echo prompt (`deploy/set-password.sh`), and only the bcrypt hash is
-  stored. A `PreToolUse` hook blocks the agent from writing `.env` or database
+- **Secrets never pass through the agent.** The developer types the login
+  password into `deploy/set-password.sh` (no echo since PR #22), and only the
+  bcrypt hash is stored. A `PreToolUse` hook blocks the agent from writing `.env` or database
   files.
 - **Claude Code's own safety checks.** Auto mode refused to let the agent
   merge to `main`, and refused to create an autonomous agent spawner until

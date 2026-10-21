@@ -2,7 +2,8 @@
 
 The backend test suite (`backend/tests/`) has two layers: fast unit/store
 tests that need nothing beyond Python, and an integration suite that
-exercises a real PostgreSQL database.
+exercises a real PostgreSQL database. The frontend has its own Vitest suite
+(`frontend/src/**/*.test.*`); see [Frontend tests](#frontend-tests).
 
 ## Running the tests
 
@@ -83,6 +84,26 @@ versions can coexist), so its location is configurable via the
 (`/usr/lib/postgresql/17/bin/pg_ctl`) — for example, on a CI runner with a
 different bundled version.
 
+## Frontend tests
+
+```bash
+cd frontend
+npm test            # vitest run: 44 tests in jsdom, no backend needed
+```
+
+Components render in jsdom with React Testing Library and are driven with
+`user-event`, the way a person would use them (labels, roles, button names),
+not by CSS class or component internals. `fetch` is replaced per test by a
+small stub (`src/test/fetch.js`) that answers `"METHOD /path"` routes and
+records every request, so tests assert on what the app *sent* as well as on
+what it shows.
+
+The drop logic was moved out of `App.jsx` into pure functions in
+`src/board.js` (`groupByColumn`, `planMove`, `applyMove`) so it can be tested
+without simulating pointer events, which dnd-kit's sensors need and jsdom
+doesn't provide. Those tests found a real bug: a card dropped back onto its
+own slot jumped to the bottom of its column.
+
 ## CI
 
 [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (at the
@@ -92,7 +113,7 @@ jobs. All four are required status checks for merging to `main`:
 
 | Job | Runs | Fails when |
 |---|---|---|
-| `lint` | `npm ci`, `npm run lint` (oxlint), `npm run build` | a lint error, or the production frontend build breaks |
+| `lint` | `npm ci`, `npm run lint` (oxlint), `npm test` (Vitest), `npm run build` | a lint error, a frontend test fails, or the production frontend build breaks |
 | `unit-tests` | `uv sync --frozen`, `pytest -m "not integration"` | any unit/store test fails, or `uv.lock` is out of date |
 | `integration-tests` | installs PostgreSQL **17** from the PGDG apt repo, then `pytest -m integration` with `PG_CTL_PATH` pointed at it | any migration/auth/workflow test against real Postgres fails |
 | `container` | builds the `Dockerfile` (layer cache in GitHub Actions), then `docker compose up --wait` on that image and a smoke test: `/health`, the frontend's `index.html`, a 401 without a session, a login, and an authenticated `GET /api/cards` | the image doesn't build, migrations fail, the app doesn't become healthy, or any smoke request fails |

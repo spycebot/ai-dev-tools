@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DndContext, PointerSensor, closestCorners, useSensor, useSensors } from "@dnd-kit/core";
 import { getSession, logout } from "./api/auth";
 import { COLUMNS, createCard, deleteCard, getCards, moveCard, setUnauthorizedHandler, updateCard } from "./api/cards";
+import { applyMove, groupByColumn, planMove } from "./board";
 import Column from "./components/Column";
 import CardEditor from "./components/CardEditor";
 import Login from "./components/Login";
@@ -60,56 +61,18 @@ export default function App() {
     setAuthenticated(false);
   }
 
-  const columns = useMemo(() => {
-    const grouped = { todo: [], in_progress: [], done: [] };
-    for (const card of cards) {
-      grouped[card.column]?.push(card);
-    }
-    for (const key of COLUMNS) {
-      grouped[key].sort((a, b) => a.position - b.position);
-    }
-    return grouped;
-  }, [cards]);
-
-  function findCard(id) {
-    return cards.find((c) => c.id === id);
-  }
+  const columns = useMemo(() => groupByColumn(cards), [cards]);
 
   async function handleDragEnd(event) {
     const { active, over } = event;
-    if (!over) return;
-
-    const activeCard = findCard(active.id);
-    if (!activeCard) return;
-
-    const overIsColumn = COLUMNS.includes(over.id);
-    const destColumn = overIsColumn ? over.id : findCard(over.id)?.column;
-    if (!destColumn) return;
-
-    const destSiblings = columns[destColumn].filter((c) => c.id !== active.id);
-    const destIndex = overIsColumn
-      ? destSiblings.length
-      : (() => {
-          const i = destSiblings.findIndex((c) => c.id === over.id);
-          return i === -1 ? destSiblings.length : i;
-        })();
-
-    if (destColumn === activeCard.column && destIndex === columns[destColumn].findIndex((c) => c.id === active.id)) {
-      return; // dropped in the same spot
-    }
+    const move = planMove(cards, active.id, over?.id);
+    if (!move) return; // no target, or dropped in the same spot
 
     // Optimistic local update so the drag feels instant.
-    setCards((prev) => {
-      const withoutActive = prev.filter((c) => c.id !== active.id);
-      const others = withoutActive.filter((c) => c.column !== destColumn);
-      const newDest = [...destSiblings];
-      newDest.splice(destIndex, 0, { ...activeCard, column: destColumn });
-      const withPositions = newDest.map((c, i) => ({ ...c, position: i }));
-      return [...others, ...withPositions];
-    });
+    setCards((prev) => applyMove(prev, active.id, move));
 
     try {
-      const updated = await moveCard(active.id, { column: destColumn, position: destIndex });
+      const updated = await moveCard(active.id, move);
       setCards(updated);
     } catch (err) {
       setError(err.message ?? "Couldn't save that move. Please try again.");
