@@ -59,6 +59,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── .claude/           # Live agent config: skill, subagent, secrets-write hook
 ├── mcp-server/        # card-catalog-ops MCP server: run tests, check API contract, lint
 ├── plugins/           # ai-devtools-agent-pack: installable skill + subagent + hook
+├── observability/     # OpenTelemetry → Prometheus/Loki/Tempo → Grafana: stack, dashboard, 5xx alert (obs.sh up/down)
 ├── security-audit/    # Semgrep + dependency + model-review audits: brief, schema, runs/, capability table, AI tool policy
 ├── README.md          # This file
 ├── openapi.yaml       # REST contract between frontend and backend (source of truth)

@@ -9,6 +9,13 @@ The app is password-gated (see `app/auth.py`): every `/api/cards*` route
 requires a valid session cookie, obtained via `POST /api/login`. `create_app`
 also accepts an `AuthConfig` so tests can use a fixed test password instead
 of real environment variables.
+
+Telemetry is FastAPI's native OpenTelemetry support: a span, the
+`http.server.request.duration` histogram (method, route, status code) and an
+ERROR log with the stack trace for every unhandled exception. Nothing is
+exported unless `FASTAPI_OTEL_AUTO_CONFIGURE=true` and an OTLP endpoint are
+set, which `observability/` does on the server only while the monitoring
+stack runs. Tests inject their own providers through `telemetry`.
 """
 
 from __future__ import annotations
@@ -42,8 +49,16 @@ def _default_store() -> CardStore:
     return store
 
 
+def _skip_telemetry(scope) -> bool:
+    # Container health checks hit /health every 30s per environment; they
+    # would drown out real traffic in the request metrics.
+    return scope.get("path") == "/health"
+
+
 def create_app(
-    store: CardStore | None = None, auth_config: AuthConfig | None = None
+    store: CardStore | None = None,
+    auth_config: AuthConfig | None = None,
+    telemetry: dict | None = None,
 ) -> FastAPI:
     holder: dict[str, CardStore | None] = {"store": store}
     # Resolved lazily, same reasoning as the store: merely importing this
@@ -92,6 +107,7 @@ def create_app(
         version="0.1.0",
         summary="REST API for the Card Catalog mini Kanban board.",
         lifespan=lifespan,
+        telemetry={"exclude": _skip_telemetry, **(telemetry or {})},
     )
 
     # A session cookie is credentialed, so the CORS origin list must be exact

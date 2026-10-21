@@ -1,0 +1,63 @@
+# One alert, on user impact: any 5xx from Card Catalog in the last 2 minutes,
+# per environment and route. It's a one-owner app, so a single failed request
+# is a person who couldn't do what they meant to do; there is no SLO budget
+# to burn first (SLOs are a Module 4 non-goal).
+#
+# With no 5xx the query returns no series: noDataState OK keeps the alert
+# Normal instead of "No data", because "no server errors" is the healthy state.
+# The labels and annotations are the context the responder starts from.
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: card-catalog
+    folder: Card Catalog
+    interval: 20s  # Grafana needs a multiple of its 10s scheduler tick
+    rules:
+      - uid: card-catalog-5xx
+        title: Card Catalog 5xx responses
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              refId: A
+              expr: >-
+                sum by (deployment_environment_name, service_version, http_route)
+                (increase(http_server_request_duration_seconds_count{job="card-catalog",
+                http_response_status_code=~"5.."}[2m]))
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels:
+          service: card-catalog
+          severity: page
+        annotations:
+          summary: >-
+            5xx responses on {{ $labels.http_route }} in
+            {{ $labels.deployment_environment_name }}
+          description: >-
+            {{ printf "%.0f" $values.B.Value }} server error(s) (5xx) on
+            {{ $labels.http_route }} in {{ $labels.deployment_environment_name }}
+            in the last 2 minutes, running {{ $labels.service_version }}.
+          environment: "{{ $labels.deployment_environment_name }}"
+          endpoint: "{{ $labels.http_route }}"
+          deployed_image: "{{ $labels.service_version }}"
+          window: 2m
+          runbook: incident-response/responder-task.md
+          dashboard_url: http://localhost:3000/d/card-catalog/card-catalog
+          __dashboardUid__: card-catalog
+          __panelId__: "2"

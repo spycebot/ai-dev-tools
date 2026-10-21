@@ -1,0 +1,24 @@
+# Firing alerts go to the incident responder (../incident-response/), which
+# runs on the host; host.docker.internal is mapped in compose.yaml.
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: incident-responder
+    receivers:
+      - uid: incident-responder-webhook
+        type: webhook
+        settings:
+          url: http://host.docker.internal:8001/alerts
+          httpMethod: POST
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: incident-responder
+    group_by: [grafana_folder, alertname, deployment_environment_name]
+    group_wait: 10s
+    group_interval: 1m
+    # Each notification can start an agent run: don't re-send a still-firing
+    # alert often. A new environment or a resolve still goes out at once.
+    repeat_interval: 4h

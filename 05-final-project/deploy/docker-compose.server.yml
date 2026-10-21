@@ -6,6 +6,11 @@
 #   prod.env       production secrets: DATABASE_URL (RDS), AUTH_*   (chmod 600)
 #   staging.env    staging secrets, separate database and keys       (chmod 600)
 #
+# Telemetry: the app only exports OpenTelemetry data when observability.env
+# exists here; ../observability/obs.sh creates and removes it. The resource
+# attributes below tag every metric, log and trace with the environment and
+# the exact image, so an alert can say which deploy is failing.
+#
 # Both environments run the same image (ghcr.io/spycebot/card-catalog:<sha>)
 # against their own database on one RDS instance. Only Caddy publishes
 # ports; the app containers are reachable only on the internal network.
@@ -29,12 +34,22 @@ services:
   prod:
     image: ${PROD_IMAGE:?set PROD_IMAGE in images.env}
     restart: unless-stopped
-    env_file: prod.env
+    env_file:
+      - prod.env
+      - { path: observability.env, required: false }   # telemetry on/off, see below
+    environment:
+      OTEL_SERVICE_NAME: card-catalog
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=prod,service.version=${PROD_IMAGE}
 
   staging:
     image: ${STAGING_IMAGE:?set STAGING_IMAGE in images.env}
     restart: unless-stopped
-    env_file: staging.env
+    env_file:
+      - staging.env
+      - { path: observability.env, required: false }
+    environment:
+      OTEL_SERVICE_NAME: card-catalog
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=staging,service.version=${STAGING_IMAGE}
 
 volumes:
   caddy_data:

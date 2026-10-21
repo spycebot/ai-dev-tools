@@ -1,0 +1,90 @@
+# Card Catalog monitoring stack, run on the EC2 host next to the app:
+#
+#   prod / staging containers --OTLP--> otel-collector --> Prometheus (metrics)
+#                                                     \--> Loki (logs)
+#                                                      \-> Tempo (traces)
+#   Grafana: dashboard + the 5xx alert --webhook--> incident responder (host :8001)
+#
+# Started and stopped with ./obs.sh, never by hand: obs.sh also switches the
+# app's OTLP export on and off. The Collector joins the app's network
+# (card-catalog_default, created by deploy/docker-compose.server.yml) so the
+# app can reach it as `otel-collector`. Nothing is published except Grafana,
+# on localhost only: reach it through an SSH tunnel (see README.md here).
+#
+# Memory limits keep the stack (about 1.6 GB in total) from starving the
+# production app. It needs a t3.medium; see docs/operations-and-security-report.md.
+
+name: card-catalog-obs
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.162.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./collector.yaml:/etc/otelcol/config.yaml:ro
+    networks: [default, app]
+    depends_on: [prometheus, loki, tempo]
+    mem_limit: 200m
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-otlp-receiver
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus:/prometheus
+    mem_limit: 400m
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.7.8
+    volumes:
+      - loki:/loki
+    mem_limit: 400m
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.10.8
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml:ro
+      - tempo:/var/tempo
+    mem_limit: 300m
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.2.3
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    extra_hosts:
+      # The incident responder runs on the host (../incident-response/).
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./dashboard.json:/var/lib/grafana/dashboards/card-catalog.json:ro
+      - ./alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml:ro
+      - ./grafana/contact-points.yaml:/etc/grafana/provisioning/alerting/contact-points.yaml:ro
+      - grafana:/var/lib/grafana
+    depends_on: [prometheus, loki, tempo]
+    mem_limit: 300m
+    restart: unless-stopped
+
+networks:
+  app:
+    name: card-catalog_default
+    external: true
+
+volumes:
+  prometheus:
+  loki:
+  tempo:
+  grafana:
