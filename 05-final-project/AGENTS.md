@@ -24,6 +24,7 @@ cd backend && uv run pytest                           # full suite (~85 tests)
 cd backend && uv run pytest -m "not integration"      # unit/store only, no Postgres
 cd backend && uv run pytest -m integration            # integration only (needs postgresql-17's initdb/postgres on PATH)
 cd frontend && npm run lint                           # oxlint
+cd frontend && npm test                               # Vitest + Testing Library (jsdom, fetch stubbed)
 ```
 
 **Conventions**: `create_app(store=None, auth_config=None)` takes injectable

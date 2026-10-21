@@ -46,6 +46,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 | Styling           | Custom CSS ("living paper" theme)                 | Special Elite (body) and Share Tech Mono (data/labels) fonts, aged-paper CSS background, blueprint blue (`#18385a`) and annotation amber (`#7a5c0a`) accent colors. |
 | Authentication    | Single shared password, `bcrypt` + signed session cookie | No user table — one owner, one password. See [Authentication](#authentication). |
 | Testing (integration) | `pytest-postgresql`                            | Real Postgres, ephemeral per-session cluster — no Docker. See [`docs/testing.md`](./docs/testing.md). |
+| Testing (frontend) | Vitest + React Testing Library (jsdom)        | `npm test`; `fetch` stubbed per test. See [Running Tests](#running-tests). |
 | Containers        | Docker (multi-stage build) + Docker Compose        | One image: Node builds the frontend, uv installs backend deps, a slim `python:3.13` runtime serves both. Compose runs it on Postgres 17. |
 
 ## Project Structure
@@ -282,7 +283,20 @@ uv run pytest -m integration         # integration tests only
 - `tests/test_auth.py` — login/logout/session, cookie tampering, and rate limiting. Card tests log in with a fixed test password (see `conftest.py`); these tests exercise the logged-out state directly.
 - `tests/integration/` — the same kinds of workflows (migrations, auth, card CRUD/move) but against a **real, ephemeral PostgreSQL cluster** with the schema built by Alembic, not SQLite. See [`docs/testing.md`](./docs/testing.md) for how that database is provisioned without Docker and without touching this machine's other databases.
 
-**Frontend** — interactivity is manually verified against the spec at each stage; no automated suite yet.
+**Frontend** — Vitest + React Testing Library, rendering in jsdom with `fetch` stubbed, so no backend is needed:
+
+```bash
+cd frontend
+npm test              # run once (CI does this) — 44 tests, a few seconds
+npm run test:watch    # re-run on save
+```
+
+- `src/board.test.js` — the pure board logic in `src/board.js`: grouping cards into columns, where a drag-and-drop lands (`planMove`), and the optimistic board update (`applyMove`).
+- `src/api/cards.test.js`, `src/api/auth.test.js` — the API clients: URLs, methods and bodies sent, the session cookie, error messages (FastAPI `detail`, validation lists, no-body and network failures), and the 401 → back-to-login hook.
+- `src/components/*.test.jsx` — the card editor (validation, trimming, create vs. edit, staying open on failure), the login form, and a card (overdue flag with a frozen clock, delete confirmation).
+- `src/App.test.jsx` — the whole app against a stubbed backend: session check, login, the board loading in order, create, delete (and a failed delete), an expired session, and logout.
+
+Dragging itself isn't simulated (dnd-kit's pointer sensors don't run in jsdom); the decisions it triggers are tested through `planMove`/`applyMove`.
 
 ## Challenges & Notes
 
@@ -311,6 +325,8 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **Mocked backend is one module, by design.** `frontend/src/api/cards.js` is the single seam between the UI and "the backend." Every function returns a `Promise` and mirrors what a real REST call will look like, so stage 4 (connecting to FastAPI) should only require rewriting that one file, not the components that call it.
 - **Stage 4 held that line — mostly.** Swapping `cards.js` from `localStorage` to `fetch` needed no component changes: the mock had deliberately used the same field names (`due_date`, `column`, …) and return shapes as the API. The only other edits were additive: a `/api` proxy in `vite.config.js`, and wrapping the create/update/delete/move handlers in `App.jsx` (plus `CardEditor`'s submit) in `try/catch` so a backend error now shows in the board's error banner instead of becoming an unhandled promise rejection.
 - **Vite proxy instead of CORS.** The frontend calls a relative `/api/*` path and the Vite dev server proxies it to the backend. This keeps every browser request same-origin regardless of whether the app is opened on `localhost` or the server IP, so no CORS config is load-bearing (the backend still sends permissive CORS headers as a fallback). Trade-off: the dev server must be restarted to pick up `vite.config.js` / `.env` changes.
+- **Frontend tests found a drag-and-drop bug.** Dropping a card back onto its own slot moved it to the *bottom* of its column. dnd-kit reports the dragged card itself as the drop target in that case; the old handler looked for it among the *other* cards, didn't find it, and fell back to "append". Found when the drop logic was pulled out of `App.jsx` into `src/board.js` and unit-tested; fixed in `planMove`.
+- **npm isn't installed on the EC2 host.** Frontend installs, tests, lint and builds run in a throwaway `node:22-slim` container (`docker run --rm --user $(id -u):$(id -g) -v $PWD:/w -w /w node:22-slim npm test`); CI and the Dockerfile run npm natively.
 - **dnd-kit's `useSortable` spreads `role="button"` onto the draggable element.** This meant a naive "click the element containing this text" test helper matched the outer card instead of the inner clickable content during manual browser verification. Not an app bug, but worth knowing if you write UI tests against these cards — target `.card-content` specifically, not the card root.
 - **`crypto.randomUUID()` needs a secure context.** The mock backend seeded card IDs with `crypto.randomUUID()`, which the browser only exposes over HTTPS or on `localhost`. Serving the dev app from a bare server IP over plain HTTP (`http://<ip>:5173`) left `crypto.randomUUID` undefined, so seeding threw and — because the initial `getCards()` call had no `.catch()` — the app hung forever on "Loading Card Catalog…". Fixed by giving `uuid()` a `crypto.getRandomValues` fallback and adding `.catch()`/`.finally()` to the load call so failures surface as an error banner instead of an infinite spinner.
 - **`uv` had to be installed for stage 3.** The spec mandates `uv` for the Python backend but it wasn't on the box; installed via `curl -LsSf https://astral.sh/uv/install.sh | sh` (lands in `~/.local/bin`). The backend is a non-packaged uv project (no `[build-system]` in `pyproject.toml`), so `uv sync` just builds a `.venv`; `pythonpath = ["."]` in the pytest config makes `import app` work without an editable install.
