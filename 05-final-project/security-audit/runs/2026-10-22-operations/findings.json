@@ -43,7 +43,9 @@
       "severity": "low",
       "scanner_severity": "not rated",
       "count": 1,
-      "locations": ["backend/uv.lock (certifi, pulled in by the OTLP exporter via requests)"],
+      "locations": [
+        "backend/uv.lock (certifi, pulled in by the OTLP exporter via requests)"
+      ],
       "evidence": "The CI security-scan job failed on the first push of the observability branch. certifi is only used by requests inside the OTLP HTTP exporter, which talks plain HTTP to the collector on the Docker network, so no TLS connection relied on the bad roots.",
       "disposition": "fixed",
       "rationale": "Not exploitable here, but the upgrade is trivial and a red security-scan job blocks everything else.",
@@ -57,7 +59,9 @@
       "title": "Visitors' IP addresses reached the incident record, which is committed to a public repo",
       "severity": "medium",
       "count": 1,
-      "locations": ["incident-response/collect-evidence.sh (container.log, Loki/Tempo results)"],
+      "locations": [
+        "incident-response/collect-evidence.sh (container.log, Loki/Tempo results)"
+      ],
       "evidence": "The first test run of the responder copied an internet scanner's IP from the container's access log into evidence/container.log and into the model's summary. Incident folders are committed and the repository is public.",
       "disposition": "fixed",
       "rationale": "Personal data in a public repo, and once committed it is in history for good. Redacting before the model sees the evidence also keeps it out of the model's own text.",
@@ -71,7 +75,10 @@
       "title": "The responder's agent reads attacker-controlled text and its answer is published",
       "severity": "medium",
       "count": 1,
-      "locations": ["incident-response/responder.py (run_agent)", "incident-response/responder-task.md"],
+      "locations": [
+        "incident-response/responder.py (run_agent)",
+        "incident-response/responder-task.md"
+      ],
       "evidence": "Request paths in container.log come from anyone on the internet, and the agent's summary is committed to a public repo. A prompt injection that made the agent Read a secret and quote it would publish it. Probes with the responder's tool set: headless claude denied a Read of /etc/hostname (outside the repo); a --disallowedTools Read() rule denied an in-repo file; the final deny list denied backend/.env.example and allowed README.md. No real .env file exists inside the repo checkout on the server; prod.env and staging.env are in /srv/card-catalog with mode 600.",
       "disposition": "fixed",
       "rationale": "Headless mode already refuses reads outside the working directory, but that depends on the user's Claude Code settings. An explicit deny list holds even if those settings are loosened, and covers a secrets file that someone might one day put inside the repo.",
@@ -85,7 +92,10 @@
       "title": "Grafana uses admin/admin, and the evidence collector logs in with it",
       "severity": "low",
       "count": 1,
-      "locations": ["observability/compose.yaml", "incident-response/collect-evidence.sh"],
+      "locations": [
+        "observability/compose.yaml",
+        "incident-response/collect-evidence.sh"
+      ],
       "evidence": "Grafana is published on 127.0.0.1:3000 only (compose.yaml) and is reached through an SSH tunnel. Anyone who can reach it already has a shell on the host.",
       "disposition": "accepted-risk",
       "rationale": "The stack runs only for short periods on a resized host. GRAFANA_ADMIN_PASSWORD and GRAFANA_AUTH override both defaults if Grafana is ever exposed or kept running.",
@@ -98,7 +108,9 @@
       "title": "The responder's webhook listens on all interfaces, port 8001",
       "severity": "low",
       "count": 1,
-      "locations": ["incident-response/responder.py (Handler.do_POST, main)"],
+      "locations": [
+        "incident-response/responder.py (Handler.do_POST, main)"
+      ],
       "evidence": "Grafana reaches it through host.docker.internal from a Docker bridge network, so it can't bind to loopback only. The handler answers 403 to any client that isn't a private or loopback address, before reading the body, and caps the body at 1 MB. A forged alert from inside the host would still only start the same evidence → proposal → policy pipeline. The EC2 security group was not checked in this run (the instance metadata query was refused by the agent's auto mode).",
       "disposition": "accepted-risk",
       "rationale": "Code-enforced client check; TCP source addresses can't be usefully spoofed over the internet; the worst case is a policy-bounded staging rollback.",
@@ -111,11 +123,14 @@
       "title": "deploy.sh deploys any image, including one built locally that never passed CI",
       "severity": "low",
       "count": 1,
-      "locations": ["deploy/deploy.sh (deploy)"],
+      "locations": [
+        "deploy/deploy.sh (deploy)"
+      ],
       "evidence": "The game day deployed a locally built image (df9cbe0) to staging. Its bug is caught by the unit suite (test_move_position_past_end_appends), but nothing on the server checks that an image came from the CI-gated build. The deploy smoke test passed because it never moves a card. Running deploy.sh needs a shell on the host, so this is a gap in defence in depth, not an exposure.",
-      "disposition": "deferred",
-      "rationale": "Proposed fix for the owner: deploy.sh accepts only ghcr.io/spycebot/card-catalog images whose commit is on main with a green CI run (or verify an attestation), and the smoke test logs in and moves a card. Both are follow-ups from the incident.",
-      "decided_by": "proposed: claude-opus-5-5"
+      "disposition": "fixed",
+      "rationale": "Owner approved the fix on 2026-10-22. The gate is defence in depth: running deploy.sh already needs a shell on the host.",
+      "decided_by": "owner (2026-10-22)",
+      "fix": "deploy.sh verifies every image before deploying: ghcr.io/spycebot/card-catalog:<full sha>, pullable from the registry (local builds refused), and labelled org.opencontainers.image.revision=<that sha>. ALLOW_UNVERIFIED_IMAGE=1 allows a local image onto staging only, for game days. Staging deploys also run backend/scripts/smoke_write.py in the new container (create, move past the end of two columns, delete), which fails on the game-day build (HTTP 500) and passes on main; tests/test_smoke_write.py covers it. Tested on the host: verify refused df9cbe0, card-catalog:local, :main and a foreign registry, and accepted 492ca2a."
     }
   ]
 }

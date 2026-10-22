@@ -35,11 +35,12 @@ which its GitHub Actions rules can't parse.
 | F13 | low | certifi trusted compromised emSign CAs | **fixed**: 2026.10.19 (PR #24) |
 | F16 | low | Grafana admin/admin, used by the evidence collector | accepted: localhost only |
 | F17 | low | Responder webhook on all interfaces, port 8001 | accepted: code rejects non-private clients |
-| F18 | low | `deploy.sh` deploys any image, even one that skipped CI | **deferred**: owner decision |
+| F18 | low | `deploy.sh` deploys any image, even one that skipped CI | **fixed** 2026-10-22: image verification + staging write smoke test |
 
 ## Decisions for the owner
 
-- **F18:** have `deploy.sh` refuse images that didn't come from a green CI
-  run on `main`, and add a logged-in card move to `smoke.sh`.
+- ~~**F18:**~~ Done 2026-10-22 (owner approved): `deploy.sh` refuses
+  images the deploy workflow didn't build, and staging deploys run a write
+  smoke test that moves a card past the end of a column.
 - Still open from the baseline: F08 + F09 (CSP, frame protection, base
   image digests), and making `security-scan` a required check.

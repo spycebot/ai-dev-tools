@@ -211,14 +211,23 @@ returned 200.
 2. **A green deploy smoke test doesn't mean users can work.** The smoke
    test checks health, the frontend, auth and a wrong password, but never
    moves a card. The broken build passed it, and it passed again when
-   collected during the incident. Proposed: log in and move a card in
-   `smoke.sh` (needs a staging test credential the server can read).
-3. **Nothing stops an unvetted image.** `deploy.sh` took a locally built
-   image. Proposed: accept only images from a green CI run on `main` (F18).
+   collected during the incident. **Fixed (F18):** staging deploys now run
+   a write smoke test in the new container that creates a card, moves it
+   past the end of two columns and deletes it. It returns HTTP 500 on the
+   game-day build, so that deploy would have rolled itself back and never
+   reached users. It needs no password: it signs its own session with the
+   container's key.
+3. **Nothing stopped an unvetted image.** `deploy.sh` took a locally built
+   image. **Fixed (F18):** it now deploys only
+   `ghcr.io/spycebot/card-catalog:<full sha>` images it can pull from the
+   registry, labelled with that commit, which only the CI-gated build job
+   pushes. Repeating this game day needs `ALLOW_UNVERIFIED_IMAGE=1`, which
+   works for staging only. Details in
+   [release-process.md](release-process.md#image-verification).
 4. **The responder can be no faster than the traffic.** The bug was live
    for 11 hours with nobody using it. The alert detects user impact, not
-   bugs. The two fixes above close that gap; a synthetic check is the
-   alternative.
+   bugs. The two fixes above close that gap for bad builds; a synthetic
+   check would be the next step for everything else.
 
 ### An earlier record: the test alert
 
@@ -244,7 +253,7 @@ Semgrep found nothing in the 51 new files; pip-audit is clean after F13.
 | F13 | low | certifi trusted compromised emSign CAs (PYSEC-2026-4320), pulled in by the OTLP exporter | **fixed** in PR #24; the CI `security-scan` job caught it |
 | F16 | low | Grafana admin/admin, also used by the evidence collector | accepted: Grafana listens on localhost only |
 | F17 | low | Responder webhook on all interfaces, port 8001 | accepted: answers private/loopback clients only |
-| F18 | low | `deploy.sh` deploys any image, even one that skipped CI | **deferred**: owner decision (see 4.1) |
+| F18 | low | `deploy.sh` deploys any image, even one that skipped CI | **fixed** 2026-10-22: image verification, plus a write smoke test on staging (see 4.1) |
 
 **What bounds a compromised or wrong agent:** the agent has no tool that
 changes anything. Its proposal is checked against the alert and the
@@ -262,10 +271,9 @@ is unchanged.
 
 ## 6. Open decisions for the owner
 
-- **F18 and the smoke test:** gate `deploy.sh` on CI-built images; add a
-  logged-in card move to `smoke.sh`.
-- **Keeping monitoring:** stop it with the resize back (the default), or
-  pay for a `t3.medium`, or send the same OTLP data to a hosted backend.
+- **Keeping monitoring:** it was stopped and the host resized back to a
+  `t3.small` on 2026-10-22. Running it permanently means paying for a
+  `t3.medium`, or sending the same OTLP data to a hosted backend.
 - Still open from the baseline audit: F08/F09 (CSP, frame protection,
   base image digests) and making `security-scan` a required check.
 

@@ -21,7 +21,8 @@ the homework requirement.
 ## Unit / store tests (`backend/tests/*.py`, not `tests/integration/`)
 
 Card CRUD, board rules (`app/board.py`), auth (login/logout/session/rate
-limiting), persistence, and the `openapi.yaml` contract. Every card/board
+limiting), persistence, the `openapi.yaml` contract, the telemetry the 5xx
+alert depends on, and the staging write smoke test (`scripts/smoke_write.py`). Every card/board
 test is **parametrized over both `CardStore` implementations** —
 `InMemoryCardStore` and `SqlAlchemyCardStore` on a throwaway in-memory
 SQLite database — so if the two stores ever disagree on behavior, the suite

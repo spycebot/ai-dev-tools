@@ -73,7 +73,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── deploy/            # What runs on the EC2 host (/srv/card-catalog/)
 │   ├── docker-compose.server.yml  # Caddy + prod + staging containers
 │   ├── Caddyfile                  # HTTPS + hostname routing
-│   ├── deploy.sh                  # migrate → switch → smoke test → auto-rollback
+│   ├── deploy.sh                  # verify image → migrate → switch → smoke test → auto-rollback
 │   ├── smoke.sh                   # post-deploy smoke test
 │   ├── ssm-run.sh                 # GitHub Actions → SSM → deploy.sh on the host
 │   └── set-password.sh            # set/rotate the login password (hash only)
@@ -286,6 +286,7 @@ uv run pytest -m integration         # integration tests only
 - `tests/test_persistence.py` — data survives a fresh store on the same file; seeding only happens once.
 - `tests/test_openapi.py` — `openapi.yaml` and the live app expose exactly the same set of operations.
 - `tests/test_auth.py` — login/logout/session, cookie tampering, and rate limiting. Card tests log in with a fixed test password (see `conftest.py`); these tests exercise the logged-out state directly.
+- `tests/test_smoke_write.py` — the staging write smoke test (`scripts/smoke_write.py`) passes on the real app, catches the 2026-10-22 game-day regression, and always deletes its card.
 - `tests/integration/` — the same kinds of workflows (migrations, auth, card CRUD/move) but against a **real, ephemeral PostgreSQL cluster** with the schema built by Alembic, not SQLite. See [`docs/testing.md`](./docs/testing.md) for how that database is provisioned without Docker and without touching this machine's other databases.
 
 **Frontend** — Vitest + React Testing Library, rendering in jsdom with `fetch` stubbed, so no backend is needed:
