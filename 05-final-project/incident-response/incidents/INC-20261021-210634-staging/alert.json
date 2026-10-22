@@ -1,0 +1,27 @@
+{
+  "receiver": "incident-responder",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "ResponderTest",
+        "test": "true",
+        "deployment_environment_name": "staging",
+        "http_route": "/api/cards",
+        "service_version": "test-image"
+      },
+      "annotations": {
+        "summary": "Responder pipeline test",
+        "description": "Test alert sent by hand to check the responder pipeline. Nothing is broken; do not change anything."
+      },
+      "startsAt": "2026-10-21T21:30:00Z"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "ResponderTest"
+  },
+  "commonLabels": {
+    "test": "true"
+  }
+}

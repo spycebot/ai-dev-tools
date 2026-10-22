@@ -1,0 +1,6 @@
+3592abf Merge pull request #18 from spycebot/dependabot/uv/05-final-project/backend/sqlalchemy-2.1.5
+ea4285f Bump sqlalchemy from 2.0.52 to 2.1.5 in /05-final-project/backend
+
+ 05-final-project/backend/uv.lock | 169 +++++++++++++++++----------------------
+ 1 file changed, 73 insertions(+), 96 deletions(-)
+

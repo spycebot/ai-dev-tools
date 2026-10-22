@@ -1,0 +1,107 @@
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "http_request_method": "GET",
+          "http_response_status_code": "200",
+          "http_route": "/{path}"
+        },
+        "value": [
+          1792691680.333,
+          "4.043399150886178"
+        ]
+      },
+      {
+        "metric": {
+          "http_request_method": "GET",
+          "http_response_status_code": "401",
+          "http_route": "/api/cards"
+        },
+        "value": [
+          1792691680.333,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "http_request_method": "POST",
+          "http_response_status_code": "401",
+          "http_route": "/api/login"
+        },
+        "value": [
+          1792691680.333,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "http_request_method": "POST",
+          "http_response_status_code": "405",
+          "http_route": "/{path}"
+        },
+        "value": [
+          1792691680.333,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "http_request_method": "GET",
+          "http_response_status_code": "404",
+          "http_route": "/{path}"
+        },
+        "value": [
+          1792691680.333,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "http_request_method": "GET",
+          "http_response_status_code": "200",
+          "http_route": "/api/session"
+        },
+        "value": [
+          1792691680.333,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "http_request_method": "POST",
+          "http_response_status_code": "200",
+          "http_route": "/api/login"
+        },
+        "value": [
+          1792691680.333,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "http_request_method": "GET",
+          "http_response_status_code": "200",
+          "http_route": "/api/cards"
+        },
+        "value": [
+          1792691680.333,
+          "5.480501467343571"
+        ]
+      },
+      {
+        "metric": {
+          "http_request_method": "POST",
+          "http_response_status_code": "500",
+          "http_route": "/api/cards/{card_id}/move"
+        },
+        "value": [
+          1792691680.333,
+          "5.480501467343571"
+        ]
+      }
+    ]
+  }
+}

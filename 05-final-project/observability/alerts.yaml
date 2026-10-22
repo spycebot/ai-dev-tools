@@ -23,10 +23,18 @@ groups:
             relativeTimeRange: { from: 600, to: 0 }
             model:
               refId: A
+              # increase() can't see the first error of a new series: the
+              # counter appears at 1 with no earlier sample, so it reads 0.
+              # The `unless ... offset 2m` branch catches a series that
+              # didn't exist 2 minutes ago. Without it, the 2026-10-22 game
+              # day alerted 2 min 19 s after the first failure instead of
+              # at the next evaluation (see docs/operations-and-security-report.md).
               expr: >-
                 sum by (deployment_environment_name, service_version, http_route)
-                (increase(http_server_request_duration_seconds_count{job="card-catalog",
-                http_response_status_code=~"5.."}[2m]))
+                (max without (__name__) (
+                  (http_server_request_duration_seconds_count{job="card-catalog", http_response_status_code=~"5.."}
+                    unless http_server_request_duration_seconds_count{job="card-catalog", http_response_status_code=~"5.."} offset 2m)
+                  or increase(http_server_request_duration_seconds_count{job="card-catalog", http_response_status_code=~"5.."}[2m])))
               instant: true
           - refId: B
             datasourceUid: __expr__

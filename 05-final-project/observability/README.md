@@ -70,9 +70,16 @@ reachable from outside the server. Set `GRAFANA_ADMIN_PASSWORD` before
 `Card Catalog 5xx responses` evaluates every 20 seconds:
 
 ```promql
-sum by (deployment_environment_name, service_version, http_route)
-  (increase(http_server_request_duration_seconds_count{job="card-catalog", http_response_status_code=~"5.."}[2m])) > 0
+sum by (deployment_environment_name, service_version, http_route) (max without (__name__) (
+    (http_server_request_duration_seconds_count{job="card-catalog", http_response_status_code=~"5.."}
+      unless http_server_request_duration_seconds_count{job="card-catalog", http_response_status_code=~"5.."} offset 2m)
+  or increase(http_server_request_duration_seconds_count{job="card-catalog", http_response_status_code=~"5.."}[2m]))) > 0
 ```
+
+The `increase()` half counts new errors on a series that already exists.
+The `unless … offset 2m` half catches the *first* error on a route: that
+series appears with the value 1 and no earlier sample, which `increase()`
+reads as 0. The game day found this gap (see below).
 
 There is one owner and no SLO, so a single 5xx is a failed action by a
 real person. The alert fires per environment and route, and its labels
@@ -89,3 +96,8 @@ the query returns nothing, and `noDataState: OK` treats that as healthy.
   and promoted resource attributes become labels with dots replaced by
   underscores (`deployment_environment_name`). The histogram arrives as
   `http_server_request_duration_seconds_{bucket,count,sum}`.
+- **`increase()` misses the first error of a new series.** In the
+  2026-10-22 game day, the first failed move at 17:52:11 created the 5xx
+  series at 1, and the original rule (`increase(...[2m]) > 0`) only fired
+  at 17:54:30, after more failures. Re-evaluating both rules over the
+  recorded data shows the current rule firing at 17:52:15.

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Incident responder proposal",
+  "description": "What the headless agent must return (claude -p --json-schema). It is a proposal: policy.py decides what, if anything, is executed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["is_real_incident", "summary", "user_impact", "suspected_cause", "suspected_change", "evidence", "proposed_action", "confidence", "follow_up"],
+  "properties": {
+    "is_real_incident": { "type": "boolean", "description": "False for test alerts or alerts the evidence does not support." },
+    "summary": { "type": "string", "description": "Two or three sentences a person paged at night can act on." },
+    "user_impact": { "type": "string", "description": "Who could not do what, where, since when, how many failed requests." },
+    "suspected_cause": { "type": "string", "description": "The root cause as far as the evidence shows, naming file and function when the stack trace allows." },
+    "suspected_change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image", "commit", "reasoning"],
+      "properties": {
+        "image": { "type": "string", "description": "The image the evidence implicates, or an empty string." },
+        "commit": { "type": "string", "description": "Git commit of that image, or an empty string." },
+        "reasoning": { "type": "string" }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "file", "finding"],
+        "properties": {
+          "source": { "enum": ["alert", "metrics", "logs", "traces", "deploy", "code"] },
+          "file": { "type": "string", "description": "Evidence file (or repo path) the finding comes from." },
+          "finding": { "type": "string" }
+        }
+      }
+    },
+    "proposed_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "environment", "reason"],
+      "properties": {
+        "type": { "enum": ["none", "rollback", "escalate"] },
+        "environment": { "enum": ["prod", "staging", "none"] },
+        "reason": { "type": "string" }
+      }
+    },
+    "confidence": { "enum": ["low", "medium", "high"] },
+    "follow_up": { "type": "array", "items": { "type": "string" }, "description": "What a human should do next (fix, test to add), never executed." }
+  }
+}

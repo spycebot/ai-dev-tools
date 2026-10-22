@@ -1,0 +1,57 @@
+{
+  "collected_at": "2026-10-21T21:06:35Z",
+  "environment": "staging",
+  "route": "/api/cards",
+  "files": [
+    {
+      "file": "deploy.json",
+      "status": "ok",
+      "what": "current and previous image, container start time, commit summaries"
+    },
+    {
+      "file": "change.diff",
+      "status": "ok",
+      "what": "commits, file stats and app diff between the previous and current image"
+    },
+    {
+      "file": "metrics-5xx.json",
+      "status": "ok",
+      "what": "5xx in the last 15 minutes by route and image"
+    },
+    {
+      "file": "metrics-requests.json",
+      "status": "ok",
+      "what": "all requests in the last 15 minutes by route and status"
+    },
+    {
+      "file": "metrics-5xx-timeline.json",
+      "status": "ok",
+      "what": "5xx per minute over the last 30 minutes, by image"
+    },
+    {
+      "file": "logs-errors.json",
+      "status": "ok",
+      "what": "ERROR logs (unhandled exceptions) in the last 15 minutes"
+    },
+    {
+      "file": "traces-search.json",
+      "status": "ok",
+      "what": "error traces in the last 15 minutes"
+    },
+    {
+      "file": "container.log",
+      "status": "ok",
+      "what": "last 200 lines of the staging container's output (15 min)"
+    },
+    {
+      "file": "smoke-now.txt",
+      "status": "ok",
+      "what": "smoke test now: passed"
+    },
+    {
+      "file": "redaction",
+      "status": "ok",
+      "what": "public IPv4 addresses replaced with <public-ip> in every evidence file"
+    }
+  ]
+}

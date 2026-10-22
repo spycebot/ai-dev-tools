@@ -1,0 +1,19 @@
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "http_request_method": "POST",
+          "http_route": "/api/cards/{card_id}/move",
+          "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b"
+        },
+        "value": [
+          1792691680.283,
+          "5.478716377839184"
+        ]
+      }
+    ]
+  }
+}

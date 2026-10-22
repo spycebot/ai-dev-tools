@@ -1,0 +1,14 @@
+{
+  "environment": "staging",
+  "current_image": "ghcr.io/spycebot/card-catalog:3592abfb9777a65828c51fee7399ebad27e2a57e",
+  "previous_image": "ghcr.io/spycebot/card-catalog:8316eff28ac51ec4faaa2db83bba4e23296c4c0e",
+  "container_started_at": "2026-10-21T20:28:53.391841384Z",
+  "current_commit": {
+    "sha": "3592abfb9777a65828c51fee7399ebad27e2a57e",
+    "summary": "3592abfb9777a65828c51fee7399ebad27e2a57e\nShannon Douglas Ware, 2026-10-21 21:19:53 +0100\nMerge pull request #18 from spycebot/dependabot/uv/05-final-project/backend/sqlalchemy-2.1.5\n\nBump sqlalchemy from 2.0.52 to 2.1.5 in /05-final-project/backend"
+  },
+  "previous_commit": {
+    "sha": "8316eff28ac51ec4faaa2db83bba4e23296c4c0e",
+    "summary": "8316eff28ac51ec4faaa2db83bba4e23296c4c0e\nShannon Douglas Ware, 2026-10-21 21:07:38 +0100\nMerge pull request #20 from spycebot/dependabot/uv/05-final-project/backend/fastapi-0.144.0\n\nBump fastapi from 0.141.1 to 0.146.0 in /05-final-project/backend"
+  }
+}

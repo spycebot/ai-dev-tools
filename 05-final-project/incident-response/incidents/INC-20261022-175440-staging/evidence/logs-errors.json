@@ -1,0 +1,407 @@
+{
+  "status": "success",
+  "data": {
+    "resultType": "streams",
+    "result": [
+      {
+        "stream": {
+          "deployment_environment_name": "staging",
+          "detected_level": "error",
+          "exception_message": "list index out of range",
+          "exception_stacktrace": "Traceback (most recent call last):\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_asgi.py\", line 151, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 96, in __call__\n    await self.simple_response(scope, receive, send, request_headers=headers)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 154, in simple_response\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/routing.py\", line 670, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2809, in app\n    await route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1837, in handle\n    await self.original_router.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2892, in handle\n    await included_router._handle_selected(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1863, in _handle_selected\n    await original_route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1326, in handle\n    await effective_context.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 166, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 152, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 745, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 374, in run_endpoint_function\n    return await run_in_threadpool(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n        _run_sync_endpoint, function=dependant.call, arguments=values\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/to_thread.py\", line 65, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run\n    result = context.run(func, *args)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_api.py\", line 244, in _run_sync_endpoint\n    return function(**arguments)\n  File \"/app/app/main.py\", line 234, in move_card\n    cards_out = store.move_card(card_id, payload)\n  File \"/app/app/sqlalchemy_store.py\", line 118, in move_card\n    placements = board.plan_move(\n        self._load(session), card_id, move.column, move.position\n    )\n  File \"/app/app/board.py\", line 79, in plan_move\n    anchor = destination[position]\n             ~~~~~~~~~~~^^^^^^^^^^\nIndexError: list index out of range\n",
+          "exception_type": "IndexError",
+          "flags": "3",
+          "http_route": "/api/cards/{card_id}/move",
+          "observed_timestamp": "1792691531234222790",
+          "scope_name": "fastapi",
+          "scope_version": "0.146.0",
+          "service_instance_id": "79a2b1d9-4de4-43cc-8c6b-e2fbdcf44f0f",
+          "service_name": "card-catalog",
+          "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+          "severity_number": "17",
+          "severity_text": "ERROR",
+          "span_id": "b95d102aa49fc95d",
+          "telemetry_sdk_language": "python",
+          "telemetry_sdk_name": "opentelemetry",
+          "telemetry_sdk_version": "1.45.1",
+          "trace_id": "872ea6a3c310ca919e78897f90cfe5ea"
+        },
+        "values": [
+          [
+            "1792691531209627232",
+            "Unhandled exception in FastAPI request"
+          ]
+        ]
+      },
+      {
+        "stream": {
+          "deployment_environment_name": "staging",
+          "detected_level": "error",
+          "exception_message": "list index out of range",
+          "exception_stacktrace": "Traceback (most recent call last):\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_asgi.py\", line 151, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 96, in __call__\n    await self.simple_response(scope, receive, send, request_headers=headers)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 154, in simple_response\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/routing.py\", line 670, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2809, in app\n    await route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1837, in handle\n    await self.original_router.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2892, in handle\n    await included_router._handle_selected(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1863, in _handle_selected\n    await original_route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1326, in handle\n    await effective_context.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 166, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 152, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 745, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 374, in run_endpoint_function\n    return await run_in_threadpool(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n        _run_sync_endpoint, function=dependant.call, arguments=values\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/to_thread.py\", line 65, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run\n    result = context.run(func, *args)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_api.py\", line 244, in _run_sync_endpoint\n    return function(**arguments)\n  File \"/app/app/main.py\", line 234, in move_card\n    cards_out = store.move_card(card_id, payload)\n  File \"/app/app/sqlalchemy_store.py\", line 118, in move_card\n    placements = board.plan_move(\n        self._load(session), card_id, move.column, move.position\n    )\n  File \"/app/app/board.py\", line 79, in plan_move\n    anchor = destination[position]\n             ~~~~~~~~~~~^^^^^^^^^^\nIndexError: list index out of range\n",
+          "exception_type": "IndexError",
+          "flags": "3",
+          "http_route": "/api/cards/{card_id}/move",
+          "observed_timestamp": "1792691645858214010",
+          "scope_name": "fastapi",
+          "scope_version": "0.146.0",
+          "service_instance_id": "79a2b1d9-4de4-43cc-8c6b-e2fbdcf44f0f",
+          "service_name": "card-catalog",
+          "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+          "severity_number": "17",
+          "severity_text": "ERROR",
+          "span_id": "a5bf2da4add94c1f",
+          "telemetry_sdk_language": "python",
+          "telemetry_sdk_name": "opentelemetry",
+          "telemetry_sdk_version": "1.45.1",
+          "trace_id": "851ad4ea7a2ee2f0288c22163cbb8be3"
+        },
+        "values": [
+          [
+            "1792691645854866006",
+            "Unhandled exception in FastAPI request"
+          ]
+        ]
+      },
+      {
+        "stream": {
+          "deployment_environment_name": "staging",
+          "detected_level": "error",
+          "exception_message": "list index out of range",
+          "exception_stacktrace": "Traceback (most recent call last):\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_asgi.py\", line 151, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 96, in __call__\n    await self.simple_response(scope, receive, send, request_headers=headers)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 154, in simple_response\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/routing.py\", line 670, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2809, in app\n    await route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1837, in handle\n    await self.original_router.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2892, in handle\n    await included_router._handle_selected(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1863, in _handle_selected\n    await original_route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1326, in handle\n    await effective_context.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 166, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 152, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 745, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 374, in run_endpoint_function\n    return await run_in_threadpool(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n        _run_sync_endpoint, function=dependant.call, arguments=values\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/to_thread.py\", line 65, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run\n    result = context.run(func, *args)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_api.py\", line 244, in _run_sync_endpoint\n    return function(**arguments)\n  File \"/app/app/main.py\", line 234, in move_card\n    cards_out = store.move_card(card_id, payload)\n  File \"/app/app/sqlalchemy_store.py\", line 118, in move_card\n    placements = board.plan_move(\n        self._load(session), card_id, move.column, move.position\n    )\n  File \"/app/app/board.py\", line 79, in plan_move\n    anchor = destination[position]\n             ~~~~~~~~~~~^^^^^^^^^^\nIndexError: list index out of range\n",
+          "exception_type": "IndexError",
+          "flags": "3",
+          "http_route": "/api/cards/{card_id}/move",
+          "observed_timestamp": "1792691650080855278",
+          "scope_name": "fastapi",
+          "scope_version": "0.146.0",
+          "service_instance_id": "79a2b1d9-4de4-43cc-8c6b-e2fbdcf44f0f",
+          "service_name": "card-catalog",
+          "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+          "severity_number": "17",
+          "severity_text": "ERROR",
+          "span_id": "ddee043b3057e843",
+          "telemetry_sdk_language": "python",
+          "telemetry_sdk_name": "opentelemetry",
+          "telemetry_sdk_version": "1.45.1",
+          "trace_id": "4f5ec970fd76467c8d2e533dc6d96ac9"
+        },
+        "values": [
+          [
+            "1792691650077256068",
+            "Unhandled exception in FastAPI request"
+          ]
+        ]
+      },
+      {
+        "stream": {
+          "deployment_environment_name": "staging",
+          "detected_level": "error",
+          "exception_message": "list index out of range",
+          "exception_stacktrace": "Traceback (most recent call last):\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_asgi.py\", line 151, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 96, in __call__\n    await self.simple_response(scope, receive, send, request_headers=headers)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 154, in simple_response\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/routing.py\", line 670, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2809, in app\n    await route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1837, in handle\n    await self.original_router.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2892, in handle\n    await included_router._handle_selected(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1863, in _handle_selected\n    await original_route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1326, in handle\n    await effective_context.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 166, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 152, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 745, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 374, in run_endpoint_function\n    return await run_in_threadpool(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n        _run_sync_endpoint, function=dependant.call, arguments=values\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/to_thread.py\", line 65, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run\n    result = context.run(func, *args)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_api.py\", line 244, in _run_sync_endpoint\n    return function(**arguments)\n  File \"/app/app/main.py\", line 234, in move_card\n    cards_out = store.move_card(card_id, payload)\n  File \"/app/app/sqlalchemy_store.py\", line 118, in move_card\n    placements = board.plan_move(\n        self._load(session), card_id, move.column, move.position\n    )\n  File \"/app/app/board.py\", line 79, in plan_move\n    anchor = destination[position]\n             ~~~~~~~~~~~^^^^^^^^^^\nIndexError: list index out of range\n",
+          "exception_type": "IndexError",
+          "flags": "3",
+          "http_route": "/api/cards/{card_id}/move",
+          "observed_timestamp": "1792691657148859187",
+          "scope_name": "fastapi",
+          "scope_version": "0.146.0",
+          "service_instance_id": "79a2b1d9-4de4-43cc-8c6b-e2fbdcf44f0f",
+          "service_name": "card-catalog",
+          "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+          "severity_number": "17",
+          "severity_text": "ERROR",
+          "span_id": "3608c654c75303d6",
+          "telemetry_sdk_language": "python",
+          "telemetry_sdk_name": "opentelemetry",
+          "telemetry_sdk_version": "1.45.1",
+          "trace_id": "4585af389cc328425c57fec1766acef6"
+        },
+        "values": [
+          [
+            "1792691657145543821",
+            "Unhandled exception in FastAPI request"
+          ]
+        ]
+      },
+      {
+        "stream": {
+          "deployment_environment_name": "staging",
+          "detected_level": "error",
+          "exception_message": "list index out of range",
+          "exception_stacktrace": "Traceback (most recent call last):\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_asgi.py\", line 151, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 96, in __call__\n    await self.simple_response(scope, receive, send, request_headers=headers)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 154, in simple_response\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/routing.py\", line 670, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2809, in app\n    await route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1837, in handle\n    await self.original_router.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2892, in handle\n    await included_router._handle_selected(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1863, in _handle_selected\n    await original_route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1326, in handle\n    await effective_context.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 166, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 152, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 745, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 374, in run_endpoint_function\n    return await run_in_threadpool(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n        _run_sync_endpoint, function=dependant.call, arguments=values\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/to_thread.py\", line 65, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run\n    result = context.run(func, *args)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_api.py\", line 244, in _run_sync_endpoint\n    return function(**arguments)\n  File \"/app/app/main.py\", line 234, in move_card\n    cards_out = store.move_card(card_id, payload)\n  File \"/app/app/sqlalchemy_store.py\", line 118, in move_card\n    placements = board.plan_move(\n        self._load(session), card_id, move.column, move.position\n    )\n  File \"/app/app/board.py\", line 79, in plan_move\n    anchor = destination[position]\n             ~~~~~~~~~~~^^^^^^^^^^\nIndexError: list index out of range\n",
+          "exception_type": "IndexError",
+          "flags": "3",
+          "http_route": "/api/cards/{card_id}/move",
+          "observed_timestamp": "1792691659306234257",
+          "scope_name": "fastapi",
+          "scope_version": "0.146.0",
+          "service_instance_id": "79a2b1d9-4de4-43cc-8c6b-e2fbdcf44f0f",
+          "service_name": "card-catalog",
+          "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+          "severity_number": "17",
+          "severity_text": "ERROR",
+          "span_id": "0240337d13cb22ee",
+          "telemetry_sdk_language": "python",
+          "telemetry_sdk_name": "opentelemetry",
+          "telemetry_sdk_version": "1.45.1",
+          "trace_id": "a47e8f27093887280c4ddc18e91de422"
+        },
+        "values": [
+          [
+            "1792691659302875813",
+            "Unhandled exception in FastAPI request"
+          ]
+        ]
+      },
+      {
+        "stream": {
+          "deployment_environment_name": "staging",
+          "detected_level": "error",
+          "exception_message": "list index out of range",
+          "exception_stacktrace": "Traceback (most recent call last):\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_asgi.py\", line 151, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 96, in __call__\n    await self.simple_response(scope, receive, send, request_headers=headers)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 154, in simple_response\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/routing.py\", line 670, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2809, in app\n    await route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1837, in handle\n    await self.original_router.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2892, in handle\n    await included_router._handle_selected(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1863, in _handle_selected\n    await original_route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1326, in handle\n    await effective_context.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 166, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 152, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 745, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 374, in run_endpoint_function\n    return await run_in_threadpool(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n        _run_sync_endpoint, function=dependant.call, arguments=values\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/to_thread.py\", line 65, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run\n    result = context.run(func, *args)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_api.py\", line 244, in _run_sync_endpoint\n    return function(**arguments)\n  File \"/app/app/main.py\", line 234, in move_card\n    cards_out = store.move_card(card_id, payload)\n  File \"/app/app/sqlalchemy_store.py\", line 118, in move_card\n    placements = board.plan_move(\n        self._load(session), card_id, move.column, move.position\n    )\n  File \"/app/app/board.py\", line 79, in plan_move\n    anchor = destination[position]\n             ~~~~~~~~~~~^^^^^^^^^^\nIndexError: list index out of range\n",
+          "exception_type": "IndexError",
+          "flags": "3",
+          "http_route": "/api/cards/{card_id}/move",
+          "observed_timestamp": "1792691662222918941",
+          "scope_name": "fastapi",
+          "scope_version": "0.146.0",
+          "service_instance_id": "79a2b1d9-4de4-43cc-8c6b-e2fbdcf44f0f",
+          "service_name": "card-catalog",
+          "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+          "severity_number": "17",
+          "severity_text": "ERROR",
+          "span_id": "f1558f0de73498ec",
+          "telemetry_sdk_language": "python",
+          "telemetry_sdk_name": "opentelemetry",
+          "telemetry_sdk_version": "1.45.1",
+          "trace_id": "3414ea61372c1bb6b99a780c47bc5ff7"
+        },
+        "values": [
+          [
+            "1792691662219045644",
+            "Unhandled exception in FastAPI request"
+          ]
+        ]
+      },
+      {
+        "stream": {
+          "deployment_environment_name": "staging",
+          "detected_level": "error",
+          "exception_message": "list index out of range",
+          "exception_stacktrace": "Traceback (most recent call last):\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_asgi.py\", line 151, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 96, in __call__\n    await self.simple_response(scope, receive, send, request_headers=headers)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py\", line 154, in simple_response\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/routing.py\", line 670, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2809, in app\n    await route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1837, in handle\n    await self.original_router.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 2892, in handle\n    await included_router._handle_selected(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1863, in _handle_selected\n    await original_route.handle(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 1326, in handle\n    await effective_context.app(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 166, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 152, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 745, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/routing.py\", line 374, in run_endpoint_function\n    return await run_in_threadpool(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n        _run_sync_endpoint, function=dependant.call, arguments=values\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/starlette/concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/to_thread.py\", line 65, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 2706, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/app/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 1100, in run\n    result = context.run(func, *args)\n  File \"/app/.venv/lib/python3.13/site-packages/fastapi/telemetry/_api.py\", line 244, in _run_sync_endpoint\n    return function(**arguments)\n  File \"/app/app/main.py\", line 234, in move_card\n    cards_out = store.move_card(card_id, payload)\n  File \"/app/app/sqlalchemy_store.py\", line 118, in move_card\n    placements = board.plan_move(\n        self._load(session), card_id, move.column, move.position\n    )\n  File \"/app/app/board.py\", line 79, in plan_move\n    anchor = destination[position]\n             ~~~~~~~~~~~^^^^^^^^^^\nIndexError: list index out of range\n",
+          "exception_type": "IndexError",
+          "flags": "3",
+          "http_route": "/api/cards/{card_id}/move",
+          "observed_timestamp": "1792691672162611551",
+          "scope_name": "fastapi",
+          "scope_version": "0.146.0",
+          "service_instance_id": "79a2b1d9-4de4-43cc-8c6b-e2fbdcf44f0f",
+          "service_name": "card-catalog",
+          "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+          "severity_number": "17",
+          "severity_text": "ERROR",
+          "span_id": "40ee3d55df0b3a30",
+          "telemetry_sdk_language": "python",
+          "telemetry_sdk_name": "opentelemetry",
+          "telemetry_sdk_version": "1.45.1",
+          "trace_id": "50dd8741b902d1a6213f6471c9439994"
+        },
+        "values": [
+          [
+            "1792691672159219255",
+            "Unhandled exception in FastAPI request"
+          ]
+        ]
+      }
+    ],
+    "stats": {
+      "summary": {
+        "bytesProcessedPerSecond": 31724,
+        "linesProcessedPerSecond": 182,
+        "totalBytesProcessed": 1218,
+        "totalLinesProcessed": 7,
+        "execTime": 0.038393,
+        "queueTime": 0.000247,
+        "subqueries": 0,
+        "totalEntriesReturned": 7,
+        "splits": 0,
+        "shards": 1,
+        "totalPostFilterLines": 7,
+        "totalStructuredMetadataBytesProcessed": 952
+      },
+      "querier": {
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "queryReferencedStructuredMetadata": false,
+          "queryUsedV2Engine": false,
+          "chunk": {
+            "headChunkBytes": 0,
+            "headChunkLines": 0,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 0,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          },
+          "chunkRefsFetchTime": 0,
+          "congestionControlLatency": 0,
+          "pipelineWrapperFilteredLines": 0,
+          "dataobj": {
+            "prePredicateDecompressedRows": 0,
+            "prePredicateDecompressedBytes": 0,
+            "prePredicateDecompressedStructuredMetadataBytes": 0,
+            "postPredicateRows": 0,
+            "postPredicateDecompressedBytes": 0,
+            "postPredicateStructuredMetadataBytes": 0,
+            "postFilterRows": 0,
+            "pagesScanned": 0,
+            "pagesDownloaded": 0,
+            "pagesDownloadedBytes": 0,
+            "pageBatches": 0,
+            "totalRowsAvailable": 0,
+            "totalPageDownloadTime": 0
+          }
+        },
+        "querierExecTime": 0.045367
+      },
+      "ingester": {
+        "totalReached": 1,
+        "totalChunksMatched": 1,
+        "totalBatches": 2,
+        "totalLinesSent": 7,
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "queryReferencedStructuredMetadata": true,
+          "queryUsedV2Engine": false,
+          "chunk": {
+            "headChunkBytes": 1218,
+            "headChunkLines": 7,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 7,
+            "headChunkStructuredMetadataBytes": 952,
+            "decompressedStructuredMetadataBytes": 0
+          },
+          "chunkRefsFetchTime": 307283,
+          "congestionControlLatency": 0,
+          "pipelineWrapperFilteredLines": 0,
+          "dataobj": {
+            "prePredicateDecompressedRows": 0,
+            "prePredicateDecompressedBytes": 0,
+            "prePredicateDecompressedStructuredMetadataBytes": 0,
+            "postPredicateRows": 0,
+            "postPredicateDecompressedBytes": 0,
+            "postPredicateStructuredMetadataBytes": 0,
+            "postFilterRows": 0,
+            "pagesScanned": 0,
+            "pagesDownloaded": 0,
+            "pagesDownloadedBytes": 0,
+            "pageBatches": 0,
+            "totalRowsAvailable": 0,
+            "totalPageDownloadTime": 0
+          }
+        },
+        "recvWaitTime": 0.013255
+      },
+      "cache": {
+        "chunk": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0,
+          "queryLengthServed": 0
+        },
+        "index": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0,
+          "queryLengthServed": 0
+        },
+        "result": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0,
+          "queryLengthServed": 0
+        },
+        "statsResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0,
+          "queryLengthServed": 0
+        },
+        "volumeResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0,
+          "queryLengthServed": 0
+        },
+        "seriesResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0,
+          "queryLengthServed": 0
+        },
+        "labelResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0,
+          "queryLengthServed": 0
+        },
+        "instantMetricResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0,
+          "queryLengthServed": 0
+        }
+      },
+      "index": {
+        "totalChunks": 0,
+        "postFilterChunks": 0,
+        "shardsDuration": 0,
+        "usedBloomFilters": false,
+        "totalStreams": 0,
+        "chunkRefsLookupTime": 0,
+        "bloomFilterTime": 0
+      }
+    }
+  }
+}
