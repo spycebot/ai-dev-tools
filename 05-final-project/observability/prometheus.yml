@@ -1,0 +1,16 @@
+# Metrics arrive by OTLP push from the Collector (--web.enable-otlp-receiver),
+# so there is nothing to scrape. service.name becomes the `job` label; the
+# promoted resource attributes become labels on every series, so each request
+# metric says which environment and which image produced it.
+global:
+  evaluation_interval: 15s
+
+otlp:
+  promote_resource_attributes:
+    - service.name
+    - service.version              # the deployed image, ghcr.io/...:<git sha>
+    - deployment.environment.name  # prod | staging
+
+storage:
+  tsdb:
+    out_of_order_time_window: 30m
