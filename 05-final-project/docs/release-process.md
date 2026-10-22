@@ -14,11 +14,11 @@ branch ──► pull request ──► CI (4 required checks) ──► merge t
    ci (again, on the merge commit) ──► build + push ghcr.io/spycebot/card-catalog:<sha>
                                      │
                                      ▼
-   staging:     migrate ─► switch ─► smoke (server) ─► smoke (outside)
+   staging:     verify ─► migrate ─► switch ─► smoke (server) ─► write smoke ─► smoke (outside)
                    any failure ⇒ automatic rollback, production never starts
                                      │
                                      ▼
-   production:  migrate ─► switch ─► smoke (server) ─► smoke (outside)
+   production:  verify ─► migrate ─► switch ─► smoke (server) ─► smoke (outside)
                    any failure ⇒ automatic rollback
 ```
 
@@ -41,10 +41,11 @@ branch ──► pull request ──► CI (4 required checks) ──► merge t
       ([`deploy/ssm-run.sh`](../deploy/ssm-run.sh)), which syncs the
       `deploy/` files from that exact commit and runs
       [`deploy/deploy.sh`](../deploy/deploy.sh);
-   3. `deploy.sh` pulls the image, runs `alembic upgrade head` against that
-      environment's database, swaps the container, waits for its health
-      check, and runs [`deploy/smoke.sh`](../deploy/smoke.sh) through the real
-      HTTPS front door;
+   3. `deploy.sh` **verifies the image** (below), runs `alembic upgrade head`
+      against that environment's database, swaps the container, waits for
+      its health check, and runs [`deploy/smoke.sh`](../deploy/smoke.sh)
+      through the real HTTPS front door. On staging it then runs the
+      **write smoke test** inside the new container;
    4. the job then runs `smoke.sh` again from the GitHub runner, from outside
       AWS, against the public URL.
 
@@ -62,8 +63,44 @@ branch ──► pull request ──► CI (4 required checks) ──► merge t
 | `POST /api/login` with a wrong password returns `401` (or `429` once the per-IP rate limit kicks in) | the auth path works end to end (bcrypt hash loaded, rate limiter up) |
 
 It deliberately doesn't log in: the real password isn't stored anywhere a
-script could use it. Authenticated workflows are covered before deploy, by
-the integration tests and the CI container smoke test.
+script could use it.
+
+### Write smoke test (staging deploys only)
+
+The checks above passed for a build in which every move of a card to the
+end of a column failed (the 2026-10-22 game day,
+[`operations-and-security-report.md`](./operations-and-security-report.md)).
+So a staging deploy also runs
+[`backend/scripts/smoke_write.py`](../backend/scripts/smoke_write.py) in the
+new container: create a card, move it past the end of `done` and then of
+`in_progress`, check it lands last each time, and delete it (also on
+failure). A failure rolls staging back like any other, and production never
+starts.
+
+It needs no password: it signs a session with the container's own
+`AUTH_SECRET_KEY`, the way a login would, and the token never leaves that
+process. It runs on staging only because it writes to the board, and not on
+rollbacks, because images older than the check don't contain the script.
+`tests/test_smoke_write.py` checks that it catches the game-day bug and
+cleans up.
+
+### Image verification
+
+`deploy.sh deploy` only accepts an image that the deploy workflow built
+(audit F18):
+
+1. it is `ghcr.io/spycebot/card-catalog:<full 40-character commit sha>`;
+2. `docker pull` succeeds, so it is in the registry, not only on the host;
+3. its `org.opencontainers.image.revision` label is that same commit.
+
+Only the workflow's build job pushes to that registry, and only after CI
+passes on `main`, so a local build, a moving tag or another registry is
+refused. `./deploy.sh verify <image>` runs the same check on its own. For a
+game day, `ALLOW_UNVERIFIED_IMAGE=1` lets a local image onto **staging**
+(never prod), with a warning. This doesn't defend against someone who can
+push to the registry with the owner's credentials; signed build provenance
+(`actions/attest-build-provenance` + `gh attestation verify`) would be the
+next step.
 
 ## Rollback
 

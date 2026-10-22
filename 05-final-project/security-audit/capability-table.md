@@ -28,7 +28,7 @@ Last reviewed: 2026-10-22 ([baseline](runs/2026-10-14-baseline/summary.md),
 | **CI** (`ci.yml`) | Build and test; no deploy | `GITHUB_TOKEN`, `contents: read` | Workflow `permissions:` | Actions pinned by commit SHA (audit F01) |
 | **Deploy build job** | Push images to `ghcr.io/spycebot/card-catalog` | `GITHUB_TOKEN`, `packages: write` | Job-level `permissions:`; runs only after CI passes on `main` | SHA-pinned actions |
 | **Deploy staging / production / rollback** | Run `deploy/ssm-run.sh` on the one app instance via SSM | Short-lived AWS credentials via OIDC for the role `card-catalog-github-deploy` | **IAM**: the trust policy accepts only this repo's `staging`/`production` environments (immutable OIDC subject); the role can only send `AWS-RunShellScript` to instance `i-03608727285d00358` | SHA-pinned actions; `docs/deployment.md` |
-| **Server scripts** (`deploy/*.sh`) | Migrate, switch images, roll back, set the password | Root on the instance (via SSM); read the env files | Code review + branch protection; fetched by exact commit SHA | This repo |
+| **Server scripts** (`deploy/*.sh`) | Migrate, switch images, roll back, set the password | Root on the instance (via SSM); read the env files | Code review + branch protection; fetched by exact commit SHA. `deploy.sh` deploys only images the deploy workflow pushed to GHCR, labelled with their commit (F18) | This repo |
 
 ## Operations automations (only while the monitoring stack runs)
 
