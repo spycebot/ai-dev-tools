@@ -12,9 +12,12 @@
 # explicit step (`alembic upgrade head`, same image, different command) — the
 # `migrate` service in docker-compose.yml locally, a pre-deploy step in
 # .github/workflows/deploy.yml in production. See docs/deployment.md.
+#
+# Base images are pinned by digest (audit F09), so a rebuild of the same
+# commit uses the same bases; Dependabot (docker) proposes digest updates.
 
 # --- Stage 1: frontend build ---------------------------------------------
-FROM node:22-slim AS frontend
+FROM node:22-slim@sha256:de170b39439eb0e5a3444ad7d60b015614a381e10fecae2e30ec9e735122f38d AS frontend
 WORKDIR /frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
@@ -22,8 +25,8 @@ COPY frontend/ ./
 RUN npm run build
 
 # --- Stage 2: backend dependencies ----------------------------------------
-FROM python:3.13-slim AS backend-deps
-COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /bin/uv
+FROM python:3.13-slim@sha256:57b29a7c050c4e679e4bea572e14b3965cf4b5839de2da49d55e49ffc4024f39 AS backend-deps
+COPY --from=ghcr.io/astral-sh/uv:0.12@sha256:3af4716e991d6956a41e573eab705d0ee08500cd829ed30293eb8472f372c65a /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never
@@ -34,7 +37,7 @@ COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # --- Stage 3: runtime ---------------------------------------------------------
-FROM python:3.13-slim AS runtime
+FROM python:3.13-slim@sha256:57b29a7c050c4e679e4bea572e14b3965cf4b5839de2da49d55e49ffc4024f39 AS runtime
 RUN useradd --create-home --uid 10001 app \
     && mkdir -p /app \
     && chown app:app /app

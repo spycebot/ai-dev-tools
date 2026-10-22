@@ -59,6 +59,7 @@ branch ──► pull request ──► CI (4 required checks) ──► merge t
 |---|---|
 | `GET /health` returns `{"status":"ok"}` | the app process is up behind Caddy, with a valid certificate |
 | `GET /` contains `<title>Card Catalog</title>` | the built frontend is being served |
+| `HEAD /` has a `Content-Security-Policy` with `frame-ancestors 'none'` and `X-Frame-Options: DENY` | Caddy's security headers are live (audit F08); `ssm-run.sh` reloads a changed Caddyfile before deploying, so this checks the new config |
 | `GET /api/cards` without a session returns `401` | the API is up and still password-gated |
 | `POST /api/login` with a wrong password returns `401` (or `429` once the per-IP rate limit kicks in) | the auth path works end to end (bcrypt hash loaded, rate limiter up) |
 

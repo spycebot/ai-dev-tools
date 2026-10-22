@@ -31,8 +31,8 @@ in `deploy.yml`, and the model review read those steps instead.
 | F04 | low | `source-map-js` 1.2.1 DoS advisory (build-time only) | **fixed**: 1.2.2 |
 | F06 | low | Uvicorn trusts any `X-Forwarded-For` | accepted: Caddy strips it (tested) |
 | F07 | low | Sessions survive a password reset and logout | **fixed** 2026-10-21: reset rotates the session key |
-| F08 | low | No CSP / frame protection | **deferred**: proposal below |
-| F09 | low | Base images by mutable tag | **deferred**: with F08 |
+| F08 | low | No CSP / frame protection | **fixed** 2026-10-22: CSP, X-Frame-Options, Permissions-Policy in Caddy |
+| F09 | low | Base images by mutable tag | **fixed** 2026-10-22: pinned by digest, Dependabot updates |
 | F02 | info | 4 × `curl … \|` flagged as curl-pipe-shell | false positive, annotated |
 | F10 | info | OIDC-claims debug step still in deploy jobs | accepted: kept for diagnosis |
 | F11 | info | `/docs` is public | accepted: contract is public anyway |
@@ -46,8 +46,8 @@ positives annotated in place.
 - ~~**F07:**~~ Done 2026-10-21 (owner approved): `deploy/set-password.sh`
   now rotates `AUTH_SECRET_KEY` too, so a reset signs every browser out.
   Logout still only clears the cookie in that browser.
-- **F08 + F09:** add `X-Frame-Options DENY` and a CSP to the Caddyfile,
-  and pin the base images by digest, in one PR that reloads Caddy on the
-  server.
+- ~~**F08 + F09:**~~ Done 2026-10-22 (owner approved): CSP, frame
+  protection and Permissions-Policy in the Caddyfile, checked by `smoke.sh`;
+  every image pinned by digest, with Dependabot updates.
 - **CI:** make the new `security-scan` job a required status check on
   `main` (Settings → Branches), alongside the existing four.
