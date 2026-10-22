@@ -7,7 +7,8 @@ last column is the one that matters. A limit written in a prompt is a
 request to the model; a limit enforced by code or by IAM still holds when
 the model is wrong or has been manipulated.
 
-Last reviewed: 2026-10-14 ([audit run](runs/2026-10-14-baseline/summary.md)).
+Last reviewed: 2026-10-22 ([baseline](runs/2026-10-14-baseline/summary.md),
+[operations run](runs/2026-10-22-operations/summary.md)).
 
 ## Coding agents and extensions
 
@@ -29,13 +30,16 @@ Last reviewed: 2026-10-14 ([audit run](runs/2026-10-14-baseline/summary.md)).
 | **Deploy staging / production / rollback** | Run `deploy/ssm-run.sh` on the one app instance via SSM | Short-lived AWS credentials via OIDC for the role `card-catalog-github-deploy` | **IAM**: the trust policy accepts only this repo's `staging`/`production` environments (immutable OIDC subject); the role can only send `AWS-RunShellScript` to instance `i-03608727285d00358` | SHA-pinned actions; `docs/deployment.md` |
 | **Server scripts** (`deploy/*.sh`) | Migrate, switch images, roll back, set the password | Root on the instance (via SSM); read the env files | Code review + branch protection; fetched by exact commit SHA | This repo |
 
+## Operations automations (only while the monitoring stack runs)
+
+| Component | Reads | Changes / runs | Credentials | Enforced by | Provenance |
+|---|---|---|---|---|---|
+| **Incident responder** (`incident-response/responder.py`, a host process) | Grafana's alert webhook; Prometheus, Loki and Tempo through Grafana; `images.env`; `docker logs` of the alerting container | Writes `incidents/<id>/`. Runs exactly two commands, with fixed argv from `autonomy-policy.yaml`: `deploy.sh rollback <env>` and `verify-recovery.sh`. Staging: on its own (level 2). Prod: only after a human runs `approve.sh` (level 1). At most one automatic action per environment per hour | Grafana admin (localhost only, F16); runs as `ubuntu`, which is in the `docker` group (root-equivalent on the host). No AWS or GitHub credentials | **Code**: `policy.py` (11 tests) decides from facts the responder gathers itself, never from model text; the environment comes from an allowlist; webhook answers only private/loopback clients (F17) | This repo |
+| **Responder's agent** (`claude -p`, started by the responder) | Repo files only: `Read`, `Grep`, `Glob`. Reads outside the repo are denied by headless mode, and `--disallowedTools` denies `/srv`, `~/.claude`, `~/.ssh`, `~/.aws`, `~/setup`, and every `.env` and `*.db` (F15) | Nothing. Its only output is a JSON proposal, validated against `response.schema.json` | The user's Claude Code login | **Code**: `--tools`, `--strict-mcp-config` (no MCP servers), deny rules; output is a proposal that `policy.py` may reject. Evidence is redacted of public IPs before it runs (F14) | Anthropic CLI; prompt in `responder-task.md` |
+| **Monitoring stack** (`observability/`) | OTLP from prod and staging (requests, ERROR logs with stack traces, traces) | Its own volumes; Grafana sends the alert webhook | Grafana admin (F16) | Grafana published on 127.0.0.1 only; the collector is on the app's Docker network, nothing else is published | Images pinned by version tag |
+
 ## Not yet in place
 
-- **Incident responder.** The Module 4 pattern (alert → evidence → headless
-  agent) ran for the HW4 app but hasn't been ported to Card Catalog yet.
-  When it is, it gets a row here: read-only evidence queries, no
-  production credentials, actions only through an allowlist and autonomy
-  levels.
 - **Snyk Agent Scan.** Not run yet: it sends the MCP server's and the
   agent pack's tool descriptions to Snyk's API, which needs the owner's
   approval first (see [`ai-tool-policy.md`](ai-tool-policy.md)). The

@@ -1,0 +1,20 @@
+df9cbe0 Game day: insert moved card before the card at the target slot
+
+ 05-final-project/backend/app/board.py | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/05-final-project/backend/app/board.py b/05-final-project/backend/app/board.py
+index 5529ff4..27df205 100644
+--- a/05-final-project/backend/app/board.py
++++ b/05-final-project/backend/app/board.py
+@@ -75,7 +75,9 @@ def plan_move(
+         return None
+ 
+     destination = [c for c in column_sorted(cards, column) if c.id != card_id]
+-    index = min(position, len(destination))
++    # Insert before the card currently at the target slot.
++    anchor = destination[position]
++    index = destination.index(anchor)
+     destination.insert(index, moving)
+ 
+     placements = [

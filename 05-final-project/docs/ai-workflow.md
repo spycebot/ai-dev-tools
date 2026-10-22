@@ -105,6 +105,8 @@ Nothing reaches production on the agent's word alone:
 | **The agent worked from the Module 3 lesson page, not the graded homework**, which was a different exercise (Kubernetes with `kind`) | Noticed late, when checking what to submit | The work became this final project; the graded homework was skipped. Lesson: read the grading page first. |
 | The agent told the developer a pasted token wouldn't be echoed in the terminal; it was | The developer | Corrected immediately. Lesson: don't assert tool behaviour you haven't checked. |
 | **`set-password.sh` echoed the password.** `getpass` inside `docker run -i` has no terminal, so it fell back to echoing, while the docs said "no-echo" | Testing the script in a pseudo-terminal while fixing audit finding F07 | Echo turned off on the host terminal (PR #22) |
+| **The incident responder's first record contained a visitor's IP address**, copied from the access log into the evidence and the model's summary, in a folder meant for a public repo | Reading the record before committing it | Evidence is redacted of public IPs before the agent runs; the record was deleted (audit F14) |
+| **The 5xx alert missed the first error.** `increase()` reads a brand-new counter series as 0, so the alert fired 2 min 19 s late | The staging game day, comparing the first ERROR log with the alert time | Rule also matches series that are new in the last 2 minutes; checked against the recorded data |
 | **Dropping a card on its own slot moved it to the bottom of the column.** dnd-kit reports the dragged card as its own drop target; the handler didn't expect that | The first frontend unit tests, once the drop logic was pulled into `src/board.js` | One guard in `planMove`, with a regression test |
 
 The pattern: the agent's code was usually right first time in the parts that
@@ -127,6 +129,13 @@ guessing a second time.
 - **Claude Code's own safety checks.** Auto mode refused to let the agent
   merge to `main`, and refused to create an autonomous agent spawner until
   the developer explicitly approved it (in Homework 4).
+- **An agent that acts is bounded by code, not its prompt.** The incident
+  responder's agent can only read; a policy file decides, from facts the
+  agent can't change, whether a rollback runs. When the developer's agent
+  tried to test the read deny list by launching a headless agent with
+  permissions bypassed, auto mode refused it as creating an unsafe agent.
+  The test was redone without the bypass
+  ([report](./operations-and-security-report.md)).
 - **Documented boundaries.** [`permissions.md`](./permissions.md) lists what
   each agent capability can and can't do.
 

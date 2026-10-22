@@ -1,0 +1,76 @@
+{
+  "receiver": "incident-responder",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "Card Catalog 5xx responses",
+        "deployment_environment_name": "staging",
+        "grafana_folder": "Card Catalog",
+        "http_route": "/api/cards/{card_id}/move",
+        "service": "card-catalog",
+        "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+        "severity": "page"
+      },
+      "annotations": {
+        "dashboard_url": "http://localhost:3000/d/card-catalog/card-catalog",
+        "deployed_image": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+        "description": "4 server error(s) (5xx) on /api/cards/{card_id}/move in staging in the last 2 minutes, running ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b.",
+        "endpoint": "/api/cards/{card_id}/move",
+        "environment": "staging",
+        "runbook": "incident-response/responder-task.md",
+        "summary": "5xx responses on /api/cards/{card_id}/move in staging",
+        "window": "2m"
+      },
+      "startsAt": "2026-10-22T17:54:30Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://localhost:3000/alerting/grafana/card-catalog-5xx/view?orgId=1",
+      "fingerprint": "30018f8c63cfcdc1",
+      "silenceURL": "http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=__alert_rule_uid__%3Dcard-catalog-5xx&matcher=deployment_environment_name%3Dstaging&matcher=http_route%3D%2Fapi%2Fcards%2F%7Bcard_id%7D%2Fmove&matcher=service%3Dcard-catalog&matcher=service_version%3Dghcr.io%2Fspycebot%2Fcard-catalog%3Adf9cbe01da3a0915b5caf7b8a24cba73dc467a9b&matcher=severity%3Dpage&orgId=1",
+      "dashboardURL": "http://localhost:3000/d/card-catalog?from=1792688070000&orgId=1&to=1792691680029",
+      "panelURL": "http://localhost:3000/d/card-catalog?from=1792688070000&orgId=1&to=1792691680029&viewPanel=2",
+      "ruleUID": "card-catalog-5xx",
+      "values": {
+        "A": 4.362010523350388,
+        "B": 4.362010523350388,
+        "C": 1
+      },
+      "valueString": "[ var='A' labels={deployment_environment_name=staging, http_route=/api/cards/{card_id}/move, service_version=ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b} type='query' value=4.362010523350388 ], [ var='B' labels={deployment_environment_name=staging, http_route=/api/cards/{card_id}/move, service_version=ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b} type='reduce' value=4.362010523350388 ], [ var='C' labels={deployment_environment_name=staging, http_route=/api/cards/{card_id}/move, service_version=ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b} type='threshold' value=1 ]",
+      "orgId": 1
+    }
+  ],
+  "groupLabels": {
+    "alertname": "Card Catalog 5xx responses",
+    "deployment_environment_name": "staging",
+    "grafana_folder": "Card Catalog"
+  },
+  "commonLabels": {
+    "alertname": "Card Catalog 5xx responses",
+    "deployment_environment_name": "staging",
+    "grafana_folder": "Card Catalog",
+    "http_route": "/api/cards/{card_id}/move",
+    "service": "card-catalog",
+    "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+    "severity": "page"
+  },
+  "commonAnnotations": {
+    "dashboard_url": "http://localhost:3000/d/card-catalog/card-catalog",
+    "deployed_image": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+    "description": "4 server error(s) (5xx) on /api/cards/{card_id}/move in staging in the last 2 minutes, running ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b.",
+    "endpoint": "/api/cards/{card_id}/move",
+    "environment": "staging",
+    "runbook": "incident-response/responder-task.md",
+    "summary": "5xx responses on /api/cards/{card_id}/move in staging",
+    "window": "2m"
+  },
+  "externalURL": "http://localhost:3000/",
+  "appVersion": "13.2.3",
+  "version": "1",
+  "groupKey": "{}:{alertname=\"Card Catalog 5xx responses\", deployment_environment_name=\"staging\", grafana_folder=\"Card Catalog\"}",
+  "truncatedAlerts": 0,
+  "orgId": 1,
+  "title": "[FIRING:1] Card Catalog 5xx responses staging Card Catalog (/api/cards/{card_id}/move card-catalog ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b page)",
+  "state": "alerting",
+  "message": "**Firing**\n\nValue: A=4.362010523350388, B=4.362010523350388, C=1\nLabels:\n - alertname = Card Catalog 5xx responses\n - deployment_environment_name = staging\n - grafana_folder = Card Catalog\n - http_route = /api/cards/{card_id}/move\n - service = card-catalog\n - service_version = ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b\n - severity = page\nAnnotations:\n - dashboard_url = http://localhost:3000/d/card-catalog/card-catalog\n - deployed_image = ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b\n - description = 4 server error(s) (5xx) on /api/cards/{card_id}/move in staging in the last 2 minutes, running ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b.\n - endpoint = /api/cards/{card_id}/move\n - environment = staging\n - runbook = incident-response/responder-task.md\n - summary = 5xx responses on /api/cards/{card_id}/move in staging\n - window = 2m\nSource: http://localhost:3000/alerting/grafana/card-catalog-5xx/view?orgId=1\nSilence: http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=__alert_rule_uid__%3Dcard-catalog-5xx&matcher=deployment_environment_name%3Dstaging&matcher=http_route%3D%2Fapi%2Fcards%2F%7Bcard_id%7D%2Fmove&matcher=service%3Dcard-catalog&matcher=service_version%3Dghcr.io%2Fspycebot%2Fcard-catalog%3Adf9cbe01da3a0915b5caf7b8a24cba73dc467a9b&matcher=severity%3Dpage&orgId=1\nDashboard: http://localhost:3000/d/card-catalog?from=1792688070000&orgId=1&to=1792691680029\nPanel: http://localhost:3000/d/card-catalog?from=1792688070000&orgId=1&to=1792691680029&viewPanel=2\n"
+}

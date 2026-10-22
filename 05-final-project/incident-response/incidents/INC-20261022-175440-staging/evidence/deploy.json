@@ -1,0 +1,14 @@
+{
+  "environment": "staging",
+  "current_image": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+  "previous_image": "ghcr.io/spycebot/card-catalog:3fae8a72911f86afaae38c10883c142110d684e7",
+  "container_started_at": "2026-10-22T06:30:58.62898713Z",
+  "current_commit": {
+    "sha": "df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+    "summary": "df9cbe01da3a0915b5caf7b8a24cba73dc467a9b\nUbuntu, 2026-10-22 06:28:04 +0000\nGame day: insert moved card before the card at the target slot\n\nDeliberately broken, never to be merged: indexes the destination column\nwithout clamping, so a move to the end of a column (or into an empty\ncolumn) raises IndexError and returns 500. The unit suite catches this\n(test_move_position_past_end_appends); the image is built locally and\ndeployed to staging only, bypassing CI, to exercise the incident responder.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+  },
+  "previous_commit": {
+    "sha": "3fae8a72911f86afaae38c10883c142110d684e7",
+    "summary": "3fae8a72911f86afaae38c10883c142110d684e7\nShannon Douglas Ware, 2026-10-22 07:26:50 +0100\nMerge pull request #24 from spycebot/observability\n\nObservability: FastAPI native OpenTelemetry, monitoring stack, 5xx alert"
+  }
+}

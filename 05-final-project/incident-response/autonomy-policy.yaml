@@ -1,0 +1,35 @@
+# What the incident responder may do on its own, enforced by policy.py,
+# never by the model. The model only proposes; this file decides.
+#
+# Autonomy levels:
+#   0 observe   collect evidence and write the incident record (always allowed)
+#   1 propose   the action is written up for a human, who runs approve.sh to execute it
+#   2 act       the responder runs the runbook itself, then runs verification
+#
+# Anything not listed here, or that fails a condition, is escalated: the
+# responder writes an escalation packet and does nothing else.
+version: 1
+
+actions:
+  none:
+    level: 0
+  escalate:
+    level: 0
+  rollback:
+    runbook: runbooks/rollback.sh          # deploy.sh rollback <env>: back to the previous image
+    verify: runbooks/verify-recovery.sh
+    environments:
+      staging: 2                           # act, then verify
+      prod: 1                              # propose; a human approves
+    conditions:
+      # The proposal must be about the environment that alerted; the model
+      # can't redirect an action at another environment.
+      environment_must_match_alert: true
+      min_confidence: high
+      # A rollback needs somewhere to go back to.
+      previous_image_required: true
+      # The image that's failing must be the one that's deployed now:
+      # rolling back something that already changed is not a fix.
+      alert_image_must_be_current: true
+      # Brake on loops: at most one automatic action per environment per hour.
+      max_automatic_actions_per_hour: 1

@@ -1,0 +1,260 @@
+{
+  "id": "INC-20261022-175440-staging",
+  "folder": "05-final-project/incident-response/incidents/INC-20261022-175440-staging",
+  "environment": "staging",
+  "opened_at": "2026-10-22T17:54:40Z",
+  "alert": {
+    "rule": "Card Catalog 5xx responses",
+    "fired_at": "2026-10-22T17:54:30Z",
+    "routes": [
+      "/api/cards/{card_id}/move"
+    ],
+    "alert_images": [
+      "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b"
+    ],
+    "description": "4 server error(s) (5xx) on /api/cards/{card_id}/move in staging in the last 2 minutes, running ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b.",
+    "labels": {
+      "alertname": "Card Catalog 5xx responses",
+      "deployment_environment_name": "staging",
+      "grafana_folder": "Card Catalog",
+      "http_route": "/api/cards/{card_id}/move",
+      "service": "card-catalog",
+      "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+      "severity": "page"
+    }
+  },
+  "deployed": {
+    "current_image": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+    "previous_image": "ghcr.io/spycebot/card-catalog:3fae8a72911f86afaae38c10883c142110d684e7"
+  },
+  "evidence": {
+    "collected_at": "2026-10-22T17:54:41Z",
+    "environment": "staging",
+    "route": "/api/cards/{card_id}/move",
+    "files": [
+      {
+        "file": "deploy.json",
+        "status": "ok",
+        "what": "current and previous image, container start time, commit summaries"
+      },
+      {
+        "file": "change.diff",
+        "status": "ok",
+        "what": "commits, file stats and app diff between the previous and current image"
+      },
+      {
+        "file": "metrics-5xx.json",
+        "status": "ok",
+        "what": "5xx in the last 15 minutes by route and image"
+      },
+      {
+        "file": "metrics-requests.json",
+        "status": "ok",
+        "what": "all requests in the last 15 minutes by route and status"
+      },
+      {
+        "file": "metrics-5xx-timeline.json",
+        "status": "ok",
+        "what": "5xx per minute over the last 30 minutes, by image"
+      },
+      {
+        "file": "logs-errors.json",
+        "status": "ok",
+        "what": "ERROR logs (unhandled exceptions) in the last 15 minutes"
+      },
+      {
+        "file": "traces-search.json",
+        "status": "ok",
+        "what": "error traces in the last 15 minutes"
+      },
+      {
+        "file": "trace-3414ea61372c1bb6b99a780c47bc5ff7.json",
+        "status": "ok",
+        "what": "full trace 3414ea61372c1bb6b99a780c47bc5ff7"
+      },
+      {
+        "file": "trace-4585af389cc328425c57fec1766acef6.json",
+        "status": "ok",
+        "what": "full trace 4585af389cc328425c57fec1766acef6"
+      },
+      {
+        "file": "trace-4f5ec970fd76467c8d2e533dc6d96ac9.json",
+        "status": "ok",
+        "what": "full trace 4f5ec970fd76467c8d2e533dc6d96ac9"
+      },
+      {
+        "file": "container.log",
+        "status": "ok",
+        "what": "last 200 lines of the staging container's output (15 min)"
+      },
+      {
+        "file": "smoke-now.txt",
+        "status": "ok",
+        "what": "smoke test now: passed"
+      },
+      {
+        "file": "redaction",
+        "status": "ok",
+        "what": "public IPv4 addresses replaced with <public-ip> in every evidence file"
+      }
+    ]
+  },
+  "agent": {
+    "command": [
+      "claude",
+      "-p",
+      "<responder-task.md>",
+      "--output-format",
+      "json",
+      "--json-schema",
+      "<response.schema.json>",
+      "--tools",
+      "Read,Grep,Glob",
+      "--strict-mcp-config"
+    ],
+    "cwd": "/home/ubuntu/ai-dev-tools",
+    "exit_code": 0,
+    "seconds": 50,
+    "model": [
+      "claude-opus-5-5"
+    ],
+    "cost_usd": 0.585757,
+    "turns": 17,
+    "session_id": "8b943178-e956-47aa-8f2a-d8fea6d8c20a",
+    "permission_denials": []
+  },
+  "proposal": {
+    "is_real_incident": true,
+    "summary": "Staging is returning 500s on every card move (POST /api/cards/{card_id}/move). The cause is an IndexError in board.plan_move, added by the image now running (df9cbe0). Roll staging back to 3fae8a7. The diff has no migrations, and prod is not affected. The commit message calls df9cbe0 a deliberately broken game-day build that skipped CI. I treated that as background only. The alert carries no test label and the failures are real, so this counts as a real incident.",
+    "user_impact": "This only affects staging (https://staging.cards.terzotech.net). Users there can't move cards when the target position is at or past the end of the column, including moves into an empty column. These requests get HTTP 500. The evidence window has 7 such failures, at about 17:52:11, 17:54:05, 17:54:10, 17:54:17, 17:54:19, 17:54:22 and 17:54:32 UTC on 2026-10-22 (logs-errors.json). Prometheus puts it at about 5.5 move 500s in 15 minutes and 4 in the 2-minute alert window. No move request succeeded in the window: there is no 200 series for this route. Every other route is fine: GET /api/cards and the frontend return 200. The smoke test passes because it doesn't exercise moves. The current container has run since 06:30:58Z. Telemetry from before about 17:22Z wasn't collected, so I can't say whether earlier moves failed.",
+    "suspected_cause": "The failure is in backend/app/board.py, function plan_move, line 79: `anchor = destination[position]`. It is reached through main.py move_card (line 234) and then sqlalchemy_store.py move_card (line 118). Commit df9cbe0 replaced the clamped `index = min(position, len(destination))` with an unclamped lookup. Any position >= len(destination) now raises IndexError: list index out of range, and that becomes a 500. This covers appending to the end of a column and moving into an empty column. The function's own docstring says a position past the end should append.",
+    "suspected_change": {
+      "image": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+      "commit": "df9cbe01da3a0915b5caf7b8a24cba73dc467a9b",
+      "reasoning": "change.diff touches only board.py plan_move. It adds the exact line in the stack trace (`anchor = destination[position]`) and removes the clamp. All 5xx in the metrics, logs and traces carry service_version df9cbe0, and no previous image shows any errors. The previous image, 3fae8a7, has the clamped code that appends past-the-end moves. The commit message says it was built locally and deployed to staging without CI."
+    },
+    "evidence": [
+      {
+        "source": "alert",
+        "file": "alert.json",
+        "finding": "Firing since 17:54:30Z with severity=page, env=staging, route /api/cards/{card_id}/move and service_version df9cbe0. There are 4 5xx in the 2m window and no test label or test annotation."
+      },
+      {
+        "source": "deploy",
+        "file": "evidence/deploy.json",
+        "finding": "Current image is df9cbe0 and previous is 3fae8a7. The container started at 2026-10-22T06:30:58Z. The commit summary describes an unclamped destination index that raises IndexError on moves to the end of a column."
+      },
+      {
+        "source": "code",
+        "file": "evidence/change.diff",
+        "finding": "The only change is board.py plan_move. `index = min(position, len(destination))` is replaced with `anchor = destination[position]; index = destination.index(anchor)`. No migrations are included."
+      },
+      {
+        "source": "logs",
+        "file": "evidence/logs-errors.json",
+        "finding": "7 ERROR entries between about 17:52:11 and 17:54:32Z, all IndexError 'list index out of range'. The stack goes main.py:234 move_card -> sqlalchemy_store.py:118 move_card -> board.py:79 plan_move. All are on image df9cbe0 in staging."
+      },
+      {
+        "source": "metrics",
+        "file": "evidence/metrics-requests.json",
+        "finding": "Over 15m there are about 5.5 POST /api/cards/{card_id}/move 500s and no 200s for that route. GET /api/cards and the frontend return 200."
+      },
+      {
+        "source": "metrics",
+        "file": "evidence/metrics-5xx.json",
+        "finding": "5xx appear only on the move route and only for image df9cbe0."
+      },
+      {
+        "source": "metrics",
+        "file": "evidence/metrics-5xx-timeline.json",
+        "finding": "The only series is image df9cbe0. It is 0 for the first two points and about 6 at the last minute. No other image has 5xx."
+      },
+      {
+        "source": "traces",
+        "file": "evidence/trace-4f5ec970fd76467c8d2e533dc6d96ac9.json",
+        "finding": "The fastapi.endpoint span move_card has error.type IndexError, and the server span shows http.response.status_code 500 on staging.cards.terzotech.net with image df9cbe0. traces-search.json lists 5 such failing move traces."
+      },
+      {
+        "source": "logs",
+        "file": "evidence/container.log",
+        "finding": "The container log shows the same IndexError traceback after `POST /api/cards/<id>/move 500`. /health is still 200. Public IPs are redacted, and I saw no secrets or cookies."
+      },
+      {
+        "source": "logs",
+        "file": "evidence/smoke-now.txt",
+        "finding": "The smoke test passes: health, frontend, auth required, and bad password rejected. It doesn't cover card moves, so the outage doesn't show up there."
+      },
+      {
+        "source": "code",
+        "file": "05-final-project/backend/app/board.py",
+        "finding": "The checked-out plan_move (line 78) still has the clamped `min(position, len(destination))`, and its docstring says 'A position past the end of the destination appends'. The previous image's behaviour is correct."
+      }
+    ],
+    "proposed_action": {
+      "type": "rollback",
+      "environment": "staging",
+      "reason": "The errors come only from the current image (df9cbe0), and the stack trace points at the exact line that image's diff added. Previous image 3fae8a7 exists and has the correct clamped code. The diff has no migrations, so switching containers back is safe. Prod is not affected."
+    },
+    "confidence": "high",
+    "follow_up": [
+      "Roll staging back to ghcr.io/spycebot/card-catalog:3fae8a72911f86afaae38c10883c142110d684e7. Then POST a move to the end of a column and into an empty column, and check both return 200.",
+      "Don't merge df9cbe0. If the 'insert before the anchor' behaviour is wanted, keep the clamp: `index = min(position, len(destination))`.",
+      "tests/test_cards.py::test_move_position_past_end_appends already catches this regression. Add a unit test of board.plan_move for moving into an empty column and for position == len(destination).",
+      "Only allow staging deploys of images that passed CI (ci.yml), so locally built images can't skip the unit suite.",
+      "Add an authenticated card move, at the end of a column and into an empty column, to the post-deploy smoke test. The current smoke test passed while every move failed."
+    ]
+  },
+  "decision": {
+    "outcome": "execute",
+    "action": "rollback",
+    "environment": "staging",
+    "level": 2,
+    "reasons": [
+      "rollback staging: all policy conditions met"
+    ],
+    "runbook": "runbooks/rollback.sh",
+    "verify": "runbooks/verify-recovery.sh",
+    "target_image": "ghcr.io/spycebot/card-catalog:3fae8a72911f86afaae38c10883c142110d684e7",
+    "policy": "autonomy-policy.yaml",
+    "decided_at": "2026-10-22T17:55:31Z"
+  },
+  "action": {
+    "argv": [
+      "/home/ubuntu/ai-dev-tools/05-final-project/incident-response/runbooks/rollback.sh",
+      "staging"
+    ],
+    "started_at": "2026-10-22T17:55:31Z",
+    "seconds": 8,
+    "exit_code": 0,
+    "stdout": "==> staging: rolling back ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b -> ghcr.io/spycebot/card-catalog:3fae8a72911f86afaae38c10883c142110d684e7\nok  /health\nok  frontend served\nok  API requires auth\nok  login rejects a wrong password (401)\nsmoke test passed: https://staging.cards.terzotech.net\n==> staging: now running ghcr.io/spycebot/card-catalog:3fae8a72911f86afaae38c10883c142110d684e7 (run rollback again to undo)\n",
+    "stderr": " Container card-catalog-staging-1 Recreate \n Container card-catalog-staging-1 Recreated \n Container card-catalog-staging-1 Starting \n Container card-catalog-staging-1 Started \n Container card-catalog-caddy-1 Running \n",
+    "executed_by": "responder"
+  },
+  "verification": {
+    "environment": "staging",
+    "started_at": "2026-10-22T17:55:39Z",
+    "ended_at": "2026-10-22T17:58:40Z",
+    "recovered": true,
+    "checks": {
+      "image": {
+        "ok": true,
+        "expected": "ghcr.io/spycebot/card-catalog:3fae8a72911f86afaae38c10883c142110d684e7",
+        "running": "ghcr.io/spycebot/card-catalog:3fae8a72911f86afaae38c10883c142110d684e7"
+      },
+      "container_health": {
+        "ok": true,
+        "status": "healthy"
+      },
+      "smoke_test": {
+        "ok": true,
+        "output": "ok  /health\nok  frontend served\nok  API requires auth\nok  login rejects a wrong password (401)\nsmoke test passed: https://staging.cards.terzotech.net"
+      },
+      "no_new_5xx": {
+        "ok": true,
+        "window_seconds": 180,
+        "count": "0"
+      }
+    }
+  },
+  "closed_at": "2026-10-22T17:58:40Z"
+}

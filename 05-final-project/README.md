@@ -8,6 +8,8 @@ How the agent was directed, reviewed and checked, including its mistakes, is wri
 
 Security is audited with Semgrep, dependency checks, model review and a human decision on every finding; see [`security-audit/audit-brief.md`](./security-audit/audit-brief.md). The same scans run in CI on every push.
 
+Production is monitored with OpenTelemetry, Prometheus, Loki, Tempo and Grafana, and a 5xx alert pages an incident responder that can roll staging back on its own (prod only with the owner's approval). One real incident, from alert to verified recovery, is written up in [`docs/operations-and-security-report.md`](./docs/operations-and-security-report.md).
+
 The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) — §1–9 cover the app itself (carried over from homework 2), §10–11 cover the homework 3 deployment architecture. Read that document for complete functional requirements, the data model, and deployment design details — this README focuses on what the app is, how it's built, and how to run it.
 
 ## Status
@@ -60,6 +62,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── mcp-server/        # card-catalog-ops MCP server: run tests, check API contract, lint
 ├── plugins/           # ai-devtools-agent-pack: installable skill + subagent + hook
 ├── observability/     # OpenTelemetry → Prometheus/Loki/Tempo → Grafana: stack, dashboard, 5xx alert (obs.sh up/down)
+├── incident-response/ # Alert → evidence → read-only agent → policy → rollback → verify; incident records
 ├── security-audit/    # Semgrep + dependency + model-review audits: brief, schema, runs/, capability table, AI tool policy
 ├── README.md          # This file
 ├── openapi.yaml       # REST contract between frontend and backend (source of truth)
@@ -81,6 +84,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 │   ├── testing.md      # Test suite structure + why Postgres is provisioned the way it is
 │   ├── deployment.md   # AWS architecture, server layout, operations, rebuild steps, cost
 │   ├── release-process.md  # PR → CI → staging → production, smoke tests, rollback, migrations policy
+│   ├── operations-and-security-report.md  # Monitoring, the incident responder, the recorded incident, findings
 │   ├── agent-extension-pack.md  # Module 5 requirement → file map
 │   ├── permissions.md  # What each agent capability may and may not do
 │   └── agent-demo.md   # Six-step agent demo walkthrough

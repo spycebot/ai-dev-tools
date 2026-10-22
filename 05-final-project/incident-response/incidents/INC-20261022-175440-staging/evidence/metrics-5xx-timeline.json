@@ -1,0 +1,27 @@
+{
+  "status": "success",
+  "data": {
+    "resultType": "matrix",
+    "result": [
+      {
+        "metric": {
+          "service_version": "ghcr.io/spycebot/card-catalog:df9cbe01da3a0915b5caf7b8a24cba73dc467a9b"
+        },
+        "values": [
+          [
+            1792691560,
+            "0"
+          ],
+          [
+            1792691620,
+            "0"
+          ],
+          [
+            1792691680,
+            "5.99736116108912"
+          ]
+        ]
+      }
+    ]
+  }
+}

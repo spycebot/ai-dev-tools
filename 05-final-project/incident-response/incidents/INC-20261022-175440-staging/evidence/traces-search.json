@@ -1,0 +1,634 @@
+{
+  "traces": [
+    {
+      "traceID": "3414ea61372c1bb6b99a780c47bc5ff7",
+      "rootServiceName": "card-catalog",
+      "rootTraceName": "POST /api/cards/{card_id}/move",
+      "startTimeUnixNano": "1792691662213588550",
+      "durationMs": 9,
+      "spanSet": {
+        "spans": [
+          {
+            "spanID": "82899bf140b1fc5c",
+            "startTimeUnixNano": "1792691662215078549",
+            "durationNanos": "3687873",
+            "attributes": [
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              },
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              }
+            ]
+          },
+          {
+            "spanID": "f1558f0de73498ec",
+            "startTimeUnixNano": "1792691662213588550",
+            "durationNanos": "9783133",
+            "attributes": [
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              },
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              }
+            ]
+          }
+        ],
+        "matched": 2
+      },
+      "spanSets": [
+        {
+          "spans": [
+            {
+              "spanID": "82899bf140b1fc5c",
+              "startTimeUnixNano": "1792691662215078549",
+              "durationNanos": "3687873",
+              "attributes": [
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                },
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                }
+              ]
+            },
+            {
+              "spanID": "f1558f0de73498ec",
+              "startTimeUnixNano": "1792691662213588550",
+              "durationNanos": "9783133",
+              "attributes": [
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                },
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                }
+              ]
+            }
+          ],
+          "matched": 2
+        }
+      ],
+      "serviceStats": {
+        "card-catalog": {
+          "spanCount": 3,
+          "errorCount": 2
+        }
+      }
+    },
+    {
+      "traceID": "4585af389cc328425c57fec1766acef6",
+      "rootServiceName": "card-catalog",
+      "rootTraceName": "POST /api/cards/{card_id}/move",
+      "startTimeUnixNano": "1792691657140638914",
+      "durationMs": 8,
+      "spanSet": {
+        "spans": [
+          {
+            "spanID": "899240b4462ee906",
+            "startTimeUnixNano": "1792691657142021630",
+            "durationNanos": "3359469",
+            "attributes": [
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              },
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              }
+            ]
+          },
+          {
+            "spanID": "3608c654c75303d6",
+            "startTimeUnixNano": "1792691657140638914",
+            "durationNanos": "8670035",
+            "attributes": [
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              },
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              }
+            ]
+          }
+        ],
+        "matched": 2
+      },
+      "spanSets": [
+        {
+          "spans": [
+            {
+              "spanID": "899240b4462ee906",
+              "startTimeUnixNano": "1792691657142021630",
+              "durationNanos": "3359469",
+              "attributes": [
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                },
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                }
+              ]
+            },
+            {
+              "spanID": "3608c654c75303d6",
+              "startTimeUnixNano": "1792691657140638914",
+              "durationNanos": "8670035",
+              "attributes": [
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                },
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                }
+              ]
+            }
+          ],
+          "matched": 2
+        }
+      ],
+      "serviceStats": {
+        "card-catalog": {
+          "spanCount": 3,
+          "errorCount": 2
+        }
+      }
+    },
+    {
+      "traceID": "4f5ec970fd76467c8d2e533dc6d96ac9",
+      "rootServiceName": "card-catalog",
+      "rootTraceName": "POST /api/cards/{card_id}/move",
+      "startTimeUnixNano": "1792691650068849272",
+      "durationMs": 12,
+      "spanSet": {
+        "spans": [
+          {
+            "spanID": "8463a02b8a065ce4",
+            "startTimeUnixNano": "1792691650070891881",
+            "durationNanos": "6155609",
+            "attributes": [
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              },
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              }
+            ]
+          },
+          {
+            "spanID": "ddee043b3057e843",
+            "startTimeUnixNano": "1792691650068849272",
+            "durationNanos": "12468092",
+            "attributes": [
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              },
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              }
+            ]
+          }
+        ],
+        "matched": 2
+      },
+      "spanSets": [
+        {
+          "spans": [
+            {
+              "spanID": "8463a02b8a065ce4",
+              "startTimeUnixNano": "1792691650070891881",
+              "durationNanos": "6155609",
+              "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                },
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                }
+              ]
+            },
+            {
+              "spanID": "ddee043b3057e843",
+              "startTimeUnixNano": "1792691650068849272",
+              "durationNanos": "12468092",
+              "attributes": [
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                },
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                }
+              ]
+            }
+          ],
+          "matched": 2
+        }
+      ],
+      "serviceStats": {
+        "card-catalog": {
+          "spanCount": 3,
+          "errorCount": 2
+        }
+      }
+    },
+    {
+      "traceID": "851ad4ea7a2ee2f0288c22163cbb8be3",
+      "rootServiceName": "card-catalog",
+      "rootTraceName": "POST /api/cards/{card_id}/move",
+      "startTimeUnixNano": "1792691645849142272",
+      "durationMs": 9,
+      "spanSet": {
+        "spans": [
+          {
+            "spanID": "69b303bed29471d8",
+            "startTimeUnixNano": "1792691645850709484",
+            "durationNanos": "3970458",
+            "attributes": [
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              },
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              }
+            ]
+          },
+          {
+            "spanID": "a5bf2da4add94c1f",
+            "startTimeUnixNano": "1792691645849142272",
+            "durationNanos": "9555890",
+            "attributes": [
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              },
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              }
+            ]
+          }
+        ],
+        "matched": 2
+      },
+      "spanSets": [
+        {
+          "spans": [
+            {
+              "spanID": "69b303bed29471d8",
+              "startTimeUnixNano": "1792691645850709484",
+              "durationNanos": "3970458",
+              "attributes": [
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                },
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                }
+              ]
+            },
+            {
+              "spanID": "a5bf2da4add94c1f",
+              "startTimeUnixNano": "1792691645849142272",
+              "durationNanos": "9555890",
+              "attributes": [
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                },
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                }
+              ]
+            }
+          ],
+          "matched": 2
+        }
+      ],
+      "serviceStats": {
+        "card-catalog": {
+          "spanCount": 3,
+          "errorCount": 2
+        }
+      }
+    },
+    {
+      "traceID": "872ea6a3c310ca919e78897f90cfe5ea",
+      "rootServiceName": "card-catalog",
+      "rootTraceName": "POST /api/cards/{card_id}/move",
+      "startTimeUnixNano": "1792691531195236165",
+      "durationMs": 39,
+      "spanSet": {
+        "spans": [
+          {
+            "spanID": "3382c875bf347316",
+            "startTimeUnixNano": "1792691531196844779",
+            "durationNanos": "12314238",
+            "attributes": [
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              },
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              }
+            ]
+          },
+          {
+            "spanID": "b95d102aa49fc95d",
+            "startTimeUnixNano": "1792691531195236165",
+            "durationNanos": "39536313",
+            "attributes": [
+              {
+                "key": "deployment.environment.name",
+                "value": {
+                  "stringValue": "staging"
+                }
+              },
+              {
+                "key": "status",
+                "value": {
+                  "stringValue": "error"
+                }
+              },
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "card-catalog"
+                }
+              }
+            ]
+          }
+        ],
+        "matched": 2
+      },
+      "spanSets": [
+        {
+          "spans": [
+            {
+              "spanID": "3382c875bf347316",
+              "startTimeUnixNano": "1792691531196844779",
+              "durationNanos": "12314238",
+              "attributes": [
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                },
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                }
+              ]
+            },
+            {
+              "spanID": "b95d102aa49fc95d",
+              "startTimeUnixNano": "1792691531195236165",
+              "durationNanos": "39536313",
+              "attributes": [
+                {
+                  "key": "deployment.environment.name",
+                  "value": {
+                    "stringValue": "staging"
+                  }
+                },
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "error"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "card-catalog"
+                  }
+                }
+              ]
+            }
+          ],
+          "matched": 2
+        }
+      ],
+      "serviceStats": {
+        "card-catalog": {
+          "spanCount": 3,
+          "errorCount": 2
+        }
+      }
+    }
+  ],
+  "metrics": {
+    "inspectedBytes": "110029",
+    "completedJobs": 3,
+    "totalJobs": 3
+  }
+}

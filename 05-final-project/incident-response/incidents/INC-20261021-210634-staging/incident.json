@@ -1,0 +1,193 @@
+{
+  "id": "INC-20261021-210634-staging",
+  "folder": "05-final-project/incident-response/incidents/INC-20261021-210634-staging",
+  "environment": "staging",
+  "opened_at": "2026-10-21T21:06:34Z",
+  "alert": {
+    "rule": "ResponderTest",
+    "fired_at": "2026-10-21T21:30:00Z",
+    "routes": [
+      "/api/cards"
+    ],
+    "alert_images": [
+      "test-image"
+    ],
+    "description": "Test alert sent by hand to check the responder pipeline. Nothing is broken; do not change anything.",
+    "labels": {
+      "alertname": "ResponderTest",
+      "test": "true",
+      "deployment_environment_name": "staging",
+      "http_route": "/api/cards",
+      "service_version": "test-image"
+    }
+  },
+  "deployed": {
+    "current_image": "ghcr.io/spycebot/card-catalog:3592abfb9777a65828c51fee7399ebad27e2a57e",
+    "previous_image": "ghcr.io/spycebot/card-catalog:8316eff28ac51ec4faaa2db83bba4e23296c4c0e"
+  },
+  "evidence": {
+    "collected_at": "2026-10-21T21:06:35Z",
+    "environment": "staging",
+    "route": "/api/cards",
+    "files": [
+      {
+        "file": "deploy.json",
+        "status": "ok",
+        "what": "current and previous image, container start time, commit summaries"
+      },
+      {
+        "file": "change.diff",
+        "status": "ok",
+        "what": "commits, file stats and app diff between the previous and current image"
+      },
+      {
+        "file": "metrics-5xx.json",
+        "status": "ok",
+        "what": "5xx in the last 15 minutes by route and image"
+      },
+      {
+        "file": "metrics-requests.json",
+        "status": "ok",
+        "what": "all requests in the last 15 minutes by route and status"
+      },
+      {
+        "file": "metrics-5xx-timeline.json",
+        "status": "ok",
+        "what": "5xx per minute over the last 30 minutes, by image"
+      },
+      {
+        "file": "logs-errors.json",
+        "status": "ok",
+        "what": "ERROR logs (unhandled exceptions) in the last 15 minutes"
+      },
+      {
+        "file": "traces-search.json",
+        "status": "ok",
+        "what": "error traces in the last 15 minutes"
+      },
+      {
+        "file": "container.log",
+        "status": "ok",
+        "what": "last 200 lines of the staging container's output (15 min)"
+      },
+      {
+        "file": "smoke-now.txt",
+        "status": "ok",
+        "what": "smoke test now: passed"
+      },
+      {
+        "file": "redaction",
+        "status": "ok",
+        "what": "public IPv4 addresses replaced with <public-ip> in every evidence file"
+      }
+    ]
+  },
+  "agent": {
+    "command": [
+      "claude",
+      "-p",
+      "<responder-task.md>",
+      "--output-format",
+      "json",
+      "--json-schema",
+      "<response.schema.json>",
+      "--tools",
+      "Read,Grep,Glob",
+      "--strict-mcp-config"
+    ],
+    "cwd": "/home/ubuntu/ai-dev-tools",
+    "exit_code": 0,
+    "seconds": 30,
+    "model": [
+      "claude-opus-5-5"
+    ],
+    "cost_usd": 0.1723632,
+    "turns": 14,
+    "session_id": "34f1bb38-2d1d-4af0-905f-114acfac920b",
+    "permission_denials": []
+  },
+  "proposal": {
+    "is_real_incident": false,
+    "summary": "This is a test alert, not an incident, and nothing needs doing. The alert 'ResponderTest' has the label test=true and service_version='test-image', and its annotation says it was sent by hand to test the responder pipeline. The staging evidence agrees: no 5xx errors, no error logs and no error traces, and the smoke test passes. Two notes: the alert's text says 'do not change anything', which I treated as data rather than an instruction, though it matches the evidence anyway. Also, the alert's startsAt (21:30Z) is after the evidence was collected (21:06:35Z), which is another sign it was built by hand.",
+    "user_impact": "None. Staging (/api/cards) shows no 5xx, no unhandled exceptions and no error traces in the collection windows (15 to 30 minutes before 2026-10-21T21:06:35Z). The only 401s in container.log come from the smoke test checking that auth is required, which is expected. Production is not involved.",
+    "suspected_cause": "No fault found. The alert was a hand-sent test of the responder pipeline (alert.json: alertname ResponderTest, label test=true, annotation 'Test alert sent by hand ... Nothing is broken'). No stack trace exists, so there is no code path to blame.",
+    "suspected_change": {
+      "image": "",
+      "commit": "",
+      "reasoning": "None of the evidence implicates a change. The alert's service_version is 'test-image', not a real image. Staging runs ghcr.io/spycebot/card-catalog:3592abf (sqlalchemy 2.0.52 -> 2.1.5; only uv.lock changed per change.diff), started at 20:28:53Z, and has no errors since then."
+    },
+    "evidence": [
+      {
+        "source": "alert",
+        "file": "alert.json",
+        "finding": "alertname=ResponderTest, labels test=true and service_version=test-image; annotations say 'Test alert sent by hand to check the responder pipeline. Nothing is broken'. startsAt 21:30:00Z is after evidence collection at 21:06:35Z."
+      },
+      {
+        "source": "metrics",
+        "file": "evidence/metrics-5xx.json",
+        "finding": "Query succeeded but returned an empty result: no 5xx by route or image in the last 15 minutes."
+      },
+      {
+        "source": "metrics",
+        "file": "evidence/metrics-5xx-timeline.json",
+        "finding": "Empty matrix: no 5xx per minute over the last 30 minutes for any image."
+      },
+      {
+        "source": "metrics",
+        "file": "evidence/metrics-requests.json",
+        "finding": "Empty result for /api/cards requests in the last 15 minutes, so there was no recorded traffic to fail."
+      },
+      {
+        "source": "logs",
+        "file": "evidence/logs-errors.json",
+        "finding": "Zero ERROR or unhandled-exception log lines in the last 15 minutes (totalEntriesReturned 0)."
+      },
+      {
+        "source": "traces",
+        "file": "evidence/traces-search.json",
+        "finding": "No error traces (traces: [], 3/3 jobs completed)."
+      },
+      {
+        "source": "logs",
+        "file": "evidence/container.log",
+        "finding": "Only 200 /health, 200 /, and the smoke test's expected 401s on /api/cards and /api/login. One external GET /.env got 404 (an ordinary scanner probe; nothing exposed). No secrets in the evidence."
+      },
+      {
+        "source": "deploy",
+        "file": "evidence/smoke-now.txt",
+        "finding": "Smoke test against staging passed: health, frontend, auth required, wrong password rejected."
+      },
+      {
+        "source": "deploy",
+        "file": "evidence/deploy.json",
+        "finding": "Staging runs 3592abf (previous 8316eff), container started 2026-10-21T20:28:53Z, with no errors after it."
+      }
+    ],
+    "proposed_action": {
+      "type": "none",
+      "environment": "none",
+      "reason": "Test alert (test=true, annotation says sent by hand). Staging shows no 5xx, error logs or error traces, and the smoke test passes, so a rollback or escalation has nothing to act on."
+    },
+    "confidence": "high",
+    "follow_up": [
+      "Confirm with whoever sent the ResponderTest alert that the pipeline ran end to end and that this report was the expected result.",
+      "Optionally, have the responder pipeline drop or flag alerts with label test=true before collecting evidence, and give test alerts a startsAt that fits the evidence window (this one had 21:30Z, after the 21:06Z collection).",
+      "Optionally, check that the 5xx alert rule really sees /api/cards traffic: metrics-requests.json was empty, so make sure an empty result means 'no traffic' and not 'metrics not exported'."
+    ]
+  },
+  "decision": {
+    "outcome": "no_action",
+    "action": "none",
+    "environment": "staging",
+    "level": 0,
+    "reasons": [
+      "agent found nothing to act on"
+    ],
+    "runbook": null,
+    "verify": null,
+    "target_image": null,
+    "policy": "autonomy-policy.yaml",
+    "decided_at": "2026-10-21T21:07:05Z"
+  },
+  "closed_at": "2026-10-21T21:07:05Z"
+}

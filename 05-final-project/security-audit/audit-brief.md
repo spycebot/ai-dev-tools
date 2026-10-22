@@ -80,6 +80,7 @@ for five minutes.
 | Run | Commit | Scanner hits | Findings (fixed / FP / accepted / deferred) |
 |---|---|---|---|
 | [2026-10-14-baseline](runs/2026-10-14-baseline/summary.md) | `ee82e14` | 24 Semgrep, 0 pip-audit, 1 OSV | 12 (5 / 1 / 4 / 2) |
+| [2026-10-22-operations](runs/2026-10-22-operations/summary.md) | `3fae8a7` | 0 Semgrep, 1 pip-audit (CI), 0 after fix | 6 (3 / 0 / 2 / 1) |
 
 ## Related
 

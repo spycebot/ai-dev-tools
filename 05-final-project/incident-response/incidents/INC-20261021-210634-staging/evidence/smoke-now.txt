@@ -1,0 +1,5 @@
+ok  /health
+ok  frontend served
+ok  API requires auth
+ok  login rejects a wrong password (401)
+smoke test passed: https://staging.cards.terzotech.net
