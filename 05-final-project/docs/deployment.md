@@ -52,7 +52,7 @@ Everything lives in `/srv/card-catalog/` (owned by `ubuntu`, mode `750`):
 | File | Source | Purpose |
 |---|---|---|
 | `docker-compose.server.yml` | [`deploy/`](../deploy/docker-compose.server.yml) | Caddy + `prod` + `staging` services |
-| `Caddyfile` | [`deploy/`](../deploy/Caddyfile) | Hostnames → containers, security headers |
+| `Caddyfile` | [`deploy/`](../deploy/Caddyfile) | Hostnames → containers, security headers (HSTS, CSP, X-Frame-Options, Permissions-Policy) |
 | `deploy.sh` | [`deploy/`](../deploy/deploy.sh) | Deploy, roll back, status (see [release process](./release-process.md)) |
 | `smoke.sh` | [`deploy/`](../deploy/smoke.sh) | Post-deploy smoke test, through the real HTTPS front door |
 | `set-password.sh` | [`deploy/`](../deploy/set-password.sh) | Set or rotate the login password (prompts, stores only the hash) and the session key, which signs every browser out |

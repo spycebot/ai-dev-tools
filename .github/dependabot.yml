@@ -1,6 +1,8 @@
-# Keeps the SHA-pinned actions and the app's lockfiles current. Each update
-# arrives as a PR that must pass the same four required checks; merging stays
-# a human decision (see 05-final-project/security-audit/).
+# Keeps the SHA-pinned actions, the digest-pinned container images (audit
+# F09) and the app's lockfiles current. Each update arrives as a PR that must
+# pass the same required checks; merging stays a human decision (see
+# 05-final-project/security-audit/). For images, a new digest of the same tag
+# (security rebuilds) is proposed; major version jumps are left to a human.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -22,3 +24,28 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+
+  - package-ecosystem: docker
+    directory: /05-final-project
+    schedule:
+      interval: weekly
+    groups:
+      base-images:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker-compose
+    directories:
+      - /05-final-project
+      - /05-final-project/deploy
+      - /05-final-project/observability
+    schedule:
+      interval: weekly
+    groups:
+      compose-images:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

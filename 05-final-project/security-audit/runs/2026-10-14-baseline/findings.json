@@ -170,9 +170,10 @@
         "05-final-project/deploy/Caddyfile"
       ],
       "evidence": "Response headers include HSTS, nosniff and Referrer-Policy, but no CSP or X-Frame-Options, so the board can be framed by another site (clickjacking). React escapes output and the frontend has no innerHTML/eval sinks (grep), which limits XSS impact.",
-      "disposition": "deferred",
+      "disposition": "fixed",
       "rationale": "Proposed fix: `X-Frame-Options DENY` and a CSP with `frame-ancestors 'none'` in the common Caddy snippet. Needs a Caddy reload on the server and a check that the Vite build works under the CSP.",
-      "decided_by": "proposed: claude-opus-5-5"
+      "decided_by": "owner (2026-10-22)",
+      "fix": "Caddyfile (common snippet): X-Frame-Options DENY, Permissions-Policy, and a Content-Security-Policy for the app (script-src 'self', styles from self and Google Fonts, fonts from fonts.gstatic.com, frame-ancestors 'none'). /docs and /redoc get their own looser policy (jsdelivr, inline script) through a non-overlapping path matcher. Tested in headless Chromium behind the real Caddy config: login page, board, drag-and-drop move (200), /docs and /redoc all render with zero CSP violations. smoke.sh now fails a deploy if the CSP or X-Frame-Options is missing; ssm-run.sh reloads Caddy before deploy.sh so that check sees the new config."
     },
     {
       "id": "F09",
@@ -186,9 +187,10 @@
         "05-final-project/deploy/docker-compose.server.yml (caddy:2-alpine)"
       ],
       "evidence": "Same class as F01 for images. The app image itself is deployed by commit SHA, so a release is reproducible once built; the base images are resolved at build time.",
-      "disposition": "deferred",
+      "disposition": "fixed",
       "rationale": "Pinning by digest needs Dependabot's docker ecosystem to stay current; worth doing together with F08's Caddy change.",
-      "decided_by": "proposed: claude-opus-5-5"
+      "decided_by": "owner (2026-10-22)",
+      "fix": "Pinned by digest: node:22-slim, python:3.13-slim and ghcr.io/astral-sh/uv:0.12 in the Dockerfile; caddy:2.11.7-alpine (same Caddy version as before) on the server; postgres:17-alpine in the local compose file; the five observability images. Dependabot's docker and docker-compose ecosystems propose digest updates weekly, majors excluded."
     },
     {
       "id": "F10",

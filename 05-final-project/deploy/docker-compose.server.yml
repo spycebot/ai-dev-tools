@@ -20,7 +20,8 @@ name: card-catalog
 
 services:
   caddy:
-    image: caddy:2-alpine
+    # Pinned by digest (audit F09); Dependabot (docker-compose) updates it.
+    image: caddy:2.11.7-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
     restart: unless-stopped
     ports:
       - "80:80"

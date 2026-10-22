@@ -13,12 +13,13 @@
 #
 # Memory limits keep the stack (about 1.6 GB in total) from starving the
 # production app. It needs a t3.medium; see docs/operations-and-security-report.md.
+# Images are pinned by digest (audit F09); Dependabot (docker-compose) updates them.
 
 name: card-catalog-obs
 
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.162.0
+    image: otel/opentelemetry-collector-contrib:0.162.0@sha256:39923a8e431bd1f57be82411999d389fcfe40857492e4365456d97a4c1f74be6
     command: ["--config=/etc/otelcol/config.yaml"]
     volumes:
       - ./collector.yaml:/etc/otelcol/config.yaml:ro
@@ -28,7 +29,7 @@ services:
     restart: unless-stopped
 
   prometheus:
-    image: prom/prometheus:v3.15.0
+    image: prom/prometheus:v3.15.0@sha256:efd719c99d83b060d9daefdcf00360461adf279f45ef5391f8d111892118753e
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-otlp-receiver
@@ -40,14 +41,14 @@ services:
     restart: unless-stopped
 
   loki:
-    image: grafana/loki:3.7.8
+    image: grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193
     volumes:
       - loki:/loki
     mem_limit: 400m
     restart: unless-stopped
 
   tempo:
-    image: grafana/tempo:2.10.8
+    image: grafana/tempo:2.10.8@sha256:f0561deb1c68ec44d6e6e7e4487f30106c4e5e768642077695b37958b105812a
     command: ["-config.file=/etc/tempo.yaml"]
     volumes:
       - ./tempo.yaml:/etc/tempo.yaml:ro
@@ -56,7 +57,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:13.2.3
+    image: grafana/grafana:13.2.3@sha256:b28bae15e219c998fb0e0424ed724930cc61b1f61fb404d47c862f9a23f9e572
     ports:
       - "127.0.0.1:3000:3000"
     environment:

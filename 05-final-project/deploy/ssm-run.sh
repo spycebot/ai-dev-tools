@@ -35,10 +35,11 @@ for f in docker-compose.server.yml Caddyfile deploy.sh smoke.sh set-password.sh;
   cat "\$f.new" > "\$f" && rm "\$f.new"   # rewrite in place: Caddyfile is bind-mounted
 done
 chown ubuntu:ubuntu *; chmod 755 *.sh
-sudo -u ubuntu -H ./deploy.sh $*
+# Reload Caddy before deploying, so the smoke test checks the new headers.
 if [ "\$caddy_changed" = 1 ]; then
   sudo -u ubuntu docker compose --env-file images.env -f docker-compose.server.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile
 fi
+sudo -u ubuntu -H ./deploy.sh $*
 EOF
 )
 

@@ -274,8 +274,8 @@ is unchanged.
 - **Keeping monitoring:** it was stopped and the host resized back to a
   `t3.small` on 2026-10-22. Running it permanently means paying for a
   `t3.medium`, or sending the same OTLP data to a hosted backend.
-- Still open from the baseline audit: F08/F09 (CSP, frame protection,
-  base image digests) and making `security-scan` a required check.
+- Still open from the baseline audit: making `security-scan` a required
+  check. (F08/F09, the CSP and image digests, were fixed on 2026-10-22.)
 
 ## 7. Reproducing it
 

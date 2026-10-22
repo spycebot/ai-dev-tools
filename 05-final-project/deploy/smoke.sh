@@ -6,8 +6,9 @@
 #                                                   # resolve the name to 127.0.0.1
 #
 # Checks, through the real HTTPS front door: the health endpoint, that the
-# frontend is served, that the API refuses an unauthenticated request, and
-# that the login endpoint is up and rejects a wrong password. Exits non-zero
+# frontend is served with its security headers, that the API refuses an
+# unauthenticated request, and that the login endpoint is up and rejects a
+# wrong password. Exits non-zero
 # on the first failure, which is what triggers a rollback in deploy.sh.
 set -euo pipefail
 
@@ -25,6 +26,12 @@ echo "ok  /health"
 
 "${CURL[@]}" -f "$BASE/" | grep -q '<title>Card Catalog</title>' || fail "frontend index"
 echo "ok  frontend served"
+
+# Audit F08: Caddy must send the CSP and frame protection with the page.
+headers=$("${CURL[@]}" -sfI "$BASE/") || fail "HEAD /"
+grep -qi "^content-security-policy:.*frame-ancestors 'none'" <<< "$headers" || fail "no Content-Security-Policy with frame-ancestors on /"
+grep -qi '^x-frame-options: *DENY' <<< "$headers" || fail "no X-Frame-Options: DENY on /"
+echo "ok  security headers"
 
 code=$("${CURL[@]}" -o /dev/null -w '%{http_code}' "$BASE/api/cards")
 [[ $code == 401 ]] || fail "/api/cards without a session returned $code, expected 401"

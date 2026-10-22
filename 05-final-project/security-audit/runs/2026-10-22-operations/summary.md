@@ -42,5 +42,5 @@ which its GitHub Actions rules can't parse.
 - ~~**F18:**~~ Done 2026-10-22 (owner approved): `deploy.sh` refuses
   images the deploy workflow didn't build, and staging deploys run a write
   smoke test that moves a card past the end of a column.
-- Still open from the baseline: F08 + F09 (CSP, frame protection, base
-  image digests), and making `security-scan` a required check.
+- F08 + F09 from the baseline were fixed on 2026-10-22. Still open:
+  making `security-scan` a required check.
