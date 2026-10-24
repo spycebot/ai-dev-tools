@@ -56,7 +56,7 @@ and from the deployment work onwards with a pull request.
 | Homework 3: ship | 1. Deployment spec | Target platform, environments, secrets, CI/CD design (`specs.md` §10–11) | Developer decision (later revised: see below) |
 | | 2. Integration tests | A real, throwaway PostgreSQL per run, schema built by Alembic | Separate `integration` marker; runs in CI |
 | | 3. Containers | Multi-stage Dockerfile; Compose with Postgres and a migrate job | Compose smoke test, also in CI |
-| | 4. CI | Lint, unit, integration and container jobs as merge gates | Branch protection requires all four |
+| | 4. CI | Lint, unit, integration and container jobs as merge gates | Branch protection requires all four (five since `security-scan` was added on 2026-10-24) |
 | | 5. Deploy | EC2 + RDS behind Caddy, two environments | Live HTTPS checks; isolation test between the staging and production databases |
 | | 6. CD | Merge → build → staging → production through SSM with OIDC | Server-side and outside smoke tests; a deliberately broken image to prove the automatic rollback |
 | Module 5 | Extension pack | Skill, subagent, MCP server, hook, plugin and permission notes | [Demo walkthrough](./agent-demo.md) |
@@ -82,8 +82,8 @@ Nothing reaches production on the agent's word alone:
    and the running app in sync.
 3. **Real infrastructure in tests.** The integration suite runs on real
    PostgreSQL with real migrations, not SQLite.
-4. **CI as a gate the agent can't skip.** `main` is protected: all four checks
-   must pass and the branch must be up to date, and the rule applies to admins
+4. **CI as a gate the agent can't skip.** `main` is protected: all five checks
+   (including `security-scan`) must pass and the branch must be up to date, and the rule applies to admins
    too.
 5. **A human merge.** The agent opens pull requests; the developer merges. Once
    the agent tried to merge PR #1 itself, and Claude Code's safety checks

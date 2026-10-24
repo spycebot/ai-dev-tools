@@ -49,5 +49,5 @@ positives annotated in place.
 - ~~**F08 + F09:**~~ Done 2026-10-22 (owner approved): CSP, frame
   protection and Permissions-Policy in the Caddyfile, checked by `smoke.sh`;
   every image pinned by digest, with Dependabot updates.
-- **CI:** make the new `security-scan` job a required status check on
-  `main` (Settings → Branches), alongside the existing four.
+- ~~**CI:**~~ Done 2026-10-24 (owner): `security-scan` is a required
+  status check on `main`, alongside the existing four.
