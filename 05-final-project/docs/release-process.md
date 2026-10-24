@@ -9,7 +9,7 @@ manual step is the owner's click on "Approve and deploy".
 ## The path of a change
 
 ```text
-branch ──► pull request ──► CI (4 required checks) ──► merge to main
+branch ──► pull request ──► CI (5 required checks) ──► merge to main
                                                             │
                          .github/workflows/deploy.yml  ◄────┘
                                      │
@@ -29,8 +29,9 @@ branch ──► pull request ──► CI (4 required checks) ──► merge t
 
 1. **Open a pull request.** `main` is protected: no direct pushes (admins
    included), no force pushes, and the branch must be up to date with `main`.
-2. **CI must pass.** [`ci.yml`](../../.github/workflows/ci.yml) runs four
-   required checks (`lint`, `unit-tests`, `integration-tests`, `container`);
+2. **CI must pass.** [`ci.yml`](../../.github/workflows/ci.yml) runs five
+   required checks (`lint`, `unit-tests`, `integration-tests`, `container`,
+   `security-scan`);
    details in [`testing.md`](./testing.md#ci).
 3. **Merge.** That push to `main` starts
    [`deploy.yml`](../../.github/workflows/deploy.yml), which re-runs the same

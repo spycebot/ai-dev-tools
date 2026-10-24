@@ -125,8 +125,8 @@ own slot jumped to the bottom of its column.
 
 [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (at the
 repository root — GitHub only reads workflows from there) runs on every push
-to `main` and every pull request that touches this app, as four independent
-jobs. All four are required status checks for merging to `main`:
+to `main` and every pull request that touches this app, as five independent
+jobs. All five are required status checks for merging to `main`:
 
 | Job | Runs | Fails when |
 |---|---|---|
@@ -134,6 +134,7 @@ jobs. All four are required status checks for merging to `main`:
 | `unit-tests` | `uv sync --frozen`, `pytest -m "not integration"` | any unit/store test fails, or `uv.lock` is out of date |
 | `integration-tests` | installs PostgreSQL **17** from the PGDG apt repo, then `pytest -m integration` with `PG_CTL_PATH` pointed at it | any migration/auth/workflow test against real Postgres fails |
 | `container` | builds the `Dockerfile` (layer cache in GitHub Actions), then `docker compose up --wait` on that image and a smoke test: `/health`, the frontend's `index.html`, a 401 without a session, a login, and an authenticated `GET /api/cards` | the image doesn't build, migrations fail, the app doesn't become healthy, or any smoke request fails |
+| `security-scan` | Semgrep (`security-audit/run-semgrep.sh --error`) and pip-audit on the backend's locked runtime dependencies | a new Semgrep finding without a recorded `nosemgrep` decision, or a dependency with a known vulnerability (see [`security-audit/`](../security-audit/audit-brief.md)) |
 
 The integration job keeps the same `pytest-postgresql` approach used locally
 (no Docker, no `services:` container) and installs Postgres 17 rather than

@@ -49,7 +49,8 @@ Then write `<run>/findings.json`, which must validate against
 
 **In CI**, the `security-scan` job in `.github/workflows/ci.yml` runs
 `run-semgrep.sh --error` and pip-audit on every push and PR, so a new
-finding fails the build. To clear a finding, either fix it or annotate the
+finding fails the build. It is a required status check on `main` (since
+2026-10-24), so a failing scan blocks the merge. To clear a finding, either fix it or annotate the
 line with `nosemgrep: <rule> -- <reason>` and record the decision in a
 run's `findings.json`. Dependabot (`.github/dependabot.yml`) opens weekly
 PRs for the pinned actions and both lockfiles.

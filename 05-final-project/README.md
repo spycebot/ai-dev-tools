@@ -386,7 +386,7 @@ costs and rebuild steps: [`docs/deployment.md`](./docs/deployment.md).
 **CI.** Every pull request runs [`ci.yml`](../.github/workflows/ci.yml):
 lint and frontend tests, backend unit tests, integration tests on
 PostgreSQL 17, an image build with a Compose smoke test, and security scans
-(Semgrep, dependency audit). The first four are required to merge.
+(Semgrep, dependency audit). All five are required to merge.
 
 **CD.** Merging to `main` runs [`deploy.yml`](../.github/workflows/deploy.yml):
 
