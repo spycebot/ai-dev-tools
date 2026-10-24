@@ -2,11 +2,13 @@
 #
 # On every merge to main (that touches the app or the workflows):
 #
-#   ci  ──►  build & push image  ──►  staging  ──►  production
+#   ci  ──►  build & push image  ──►  staging  ──►  [approval]  ──►  production
 #  (gate)    ghcr.io/…:<sha>          migrate, switch, smoke test (server-side,
 #                                     auto-rollback) + smoke test from outside
 #
-# Production only starts if staging passed its smoke tests. Either deploy
+# Production only starts if staging passed its smoke tests and the owner
+# approved it: the `production` environment has a required reviewer
+# (repo Settings → Environments), so the job waits for review. Either deploy
 # rolls itself back to the previous image if its smoke test fails.
 # Manual runs (Actions → Deploy → Run workflow) can redeploy the selected
 # branch's latest commit through the same pipeline, or roll an environment

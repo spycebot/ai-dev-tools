@@ -7,6 +7,21 @@ exercises a real PostgreSQL database. The frontend has its own Vitest suite
 
 ## Running the tests
 
+One command runs everything, with nothing but Docker on the host:
+
+```bash
+make test     # backend unit + integration, frontend tests, lint
+```
+
+It builds the two stages of [`Dockerfile.test`](../Dockerfile.test):
+`backend-test` (the backend's locked dependencies plus Debian's
+`postgresql-17`, so the integration suite boots its throwaway cluster
+inside the container) and `frontend-test` (`npm ci`, then `npm test` and
+`npm run lint`). Both use the same digest-pinned base images as the app.
+CI runs the same commands natively instead (see [CI](#ci)).
+
+Natively (`make test-local` runs the backend and frontend suites in turn):
+
 ```bash
 cd backend
 uv run pytest                        # everything (unit + integration)
@@ -14,7 +29,7 @@ uv run pytest -m "not integration"   # unit/store tests only — no Postgres nee
 uv run pytest -m integration         # integration tests only
 ```
 
-The full suite is 85 tests and runs in well under 10 seconds locally,
+The backend suite is 98 tests (89 unit, 9 integration) and runs in about 10 seconds locally,
 including the Postgres cluster boot — fast enough to run on every push, per
 the homework requirement.
 
@@ -22,7 +37,8 @@ the homework requirement.
 
 Card CRUD, board rules (`app/board.py`), auth (login/logout/session/rate
 limiting), persistence, the `openapi.yaml` contract, the telemetry the 5xx
-alert depends on, and the staging write smoke test (`scripts/smoke_write.py`). Every card/board
+alert depends on (and that no card content or credentials reach it), the
+`.env` writer behind `make up`, and the staging write smoke test (`scripts/smoke_write.py`). Every card/board
 test is **parametrized over both `CardStore` implementations** —
 `InMemoryCardStore` and `SqlAlchemyCardStore` on a throwaway in-memory
 SQLite database — so if the two stores ever disagree on behavior, the suite

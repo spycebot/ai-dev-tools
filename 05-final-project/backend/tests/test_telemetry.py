@@ -115,3 +115,42 @@ def test_health_checks_are_not_measured(telemetry):
     for _ in range(3):
         assert client.get("/health").status_code == 200
     assert all(p.get("http.route") != "/health" for p in _request_points(metrics))
+
+
+def _everything_exported(metrics, spans, logs) -> str:
+    """Every attribute, event and log body the providers would export."""
+    parts = [str(p) for p in _request_points(metrics)]
+    for span in spans.get_finished_spans():
+        parts += [span.name, str(dict(span.attributes or {}))]
+        parts += [f"{e.name} {dict(e.attributes or {})}" for e in span.events]
+    for record in logs.get_finished_logs():
+        record = record.log_record if hasattr(record, "log_record") else record
+        parts += [str(record.body), str(dict(record.attributes or {}))]
+    return "\n".join(parts)
+
+
+def test_no_card_content_or_credentials_reach_telemetry(telemetry):
+    """Course criterion: no customer data or credentials in telemetry."""
+    config, metrics, spans, logs = telemetry
+    client = _client(BrokenStore(seed=False), config)
+    cookie = client.cookies.get("cc_session")
+    secrets = {
+        "password": TEST_PASSWORD,
+        "session cookie": cookie,
+        "card title": "Renew passport 7f3c",
+        "card description": "Bank details in the drawer 9d2e",
+    }
+    created = client.post(
+        "/api/cards",
+        json={"title": secrets["card title"], "description": secrets["card description"]},
+    )
+    assert created.status_code == 201
+    card_id = created.json()["id"]
+    assert client.patch(f"/api/cards/{card_id}", json={"title": secrets["card title"] + "!"}).status_code == 200
+    assert client.get("/api/cards").status_code == 500  # the ERROR log path too
+    assert client.post("/api/login", json={"password": "wrong-" + TEST_PASSWORD}).status_code == 401
+
+    exported = _everything_exported(metrics, spans, logs)
+    assert "/api/cards" in exported and "simulated store failure" in exported  # it was recorded
+    for what, value in secrets.items():
+        assert value and value not in exported, f"{what} reached telemetry"

@@ -74,7 +74,7 @@ short-lived GitHub OIDC token, then asks AWS Systems Manager (SSM) to run
 | IAM identity provider | `token.actions.githubusercontent.com`, audience `sts.amazonaws.com` |
 | IAM role | `card-catalog-github-deploy`; permissions: `ssm:SendCommand` on this one instance with the `AWS-RunShellScript` document, plus `ssm:GetCommandInvocation` / `ListCommandInvocations` |
 | EC2 instance role | `card-catalog-ec2` includes `AmazonSSMManagedInstanceCore`, so the SSM agent can receive commands |
-| GitHub environments | `staging`, `production`, both restricted to protected branches (`main`) |
+| GitHub environments | `staging`, `production`, both restricted to protected branches (`main`); `production` also has a required reviewer (the owner), so production deploys wait for manual approval |
 
 The role's trust policy only accepts tokens from this repository's two
 environments. **This repository uses GitHub's immutable OIDC subject**, which
