@@ -33,7 +33,7 @@ down, so the project keeps its context in files:
 
 | File | Role |
 |---|---|
-| [`AGENTS.md`](../AGENTS.md) (via [`CLAUDE.md`](../CLAUDE.md)) | The standing prompt. The bottom half is written by the developer: where the work happens, the homework's step list, "commit and push after each completed step", "AGENTS.md takes precedence over the published homework", README upkeep rules. The top half, a quick reference of architecture, commands, conventions and security boundaries, was added for any agent working in the repo later. |
+| [`AGENTS.md`](../AGENTS.md) (via [`CLAUDE.md`](../CLAUDE.md)) | The standing prompt: architecture, commands, conventions, security boundaries, the team and issue workflow, an index of the modular docs, and the developer's working rules ("commit and push after each completed step", "AGENTS.md takes precedence over the published homework", README upkeep). During homework 3 its bottom half also held that homework's step list; that was replaced by the doc index for the final project. |
 | [`_docs/specs.md`](../_docs/specs.md) | The product spec: scope, data model, interactions, API, test plan, and the deployment design (§10–11). Every implementation step cites it. |
 | [`openapi.yaml`](../openapi.yaml) | The API contract. `backend/tests/test_openapi.py` fails if the app and the contract drift. |
 | [README Challenges & Notes](../README.md#challenges--notes) | A running log of surprises, wrong turns and the reasons behind decisions. It doubles as memory for the next session. |

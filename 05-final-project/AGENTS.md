@@ -1,10 +1,9 @@
-# Agent Capabilities Quick Reference
+# Card Catalog: instructions for coding agents
 
 Portable instructions for any coding agent (Claude Code, Codex, or
-equivalent) working in this repo — added as part of the Module 5 "Agent
-Extension Pack" (`mcp-server/`, `plugins/`, `.claude/`; map in `docs/agent-extension-pack.md`). The homework-process notes
-below this section are specific to how this app was originally built;
-this section is the durable reference for working in it going forward.
+equivalent) working on Card Catalog, the AI Dev Tools Zoomcamp final
+project. Agent tooling: `mcp-server/`, `plugins/`, `.claude/` (map in
+`docs/agent-extension-pack.md`).
 
 **Architecture**: React + Vite frontend (`frontend/`) talking to a FastAPI
 backend (`backend/`) over `/api/*`, proxied same-origin by Vite in dev (no
@@ -16,11 +15,13 @@ store. Auth is a single shared password (`backend/app/auth.py`): bcrypt
 hash + signed session cookie, no user table. Full detail: `README.md`,
 `_docs/specs.md`.
 
-**Commands**:
+**Commands** (`make help` lists them all):
 ```bash
+make up                                              # whole stack in Docker on Postgres, :8000
+make test                                            # every test in Docker (backend unit + integration, frontend, lint)
 cd backend && uv run uvicorn app.main:app --reload   # backend, :8000
 cd frontend && npm run dev                           # frontend, :5173
-cd backend && uv run pytest                           # full suite (~85 tests)
+cd backend && uv run pytest                           # full backend suite (98 tests)
 cd backend && uv run pytest -m "not integration"      # unit/store only, no Postgres
 cd backend && uv run pytest -m integration            # integration only (needs postgresql-17's initdb/postgres on PATH)
 cd frontend && npm run lint                           # oxlint
@@ -56,35 +57,30 @@ them is in `docs/agent-team.md`. Work is tracked in GitHub Issues
   how each acceptance criterion was checked; merging closes the issue.
 - Follow-ups found along the way become new issues, not scope creep.
 
------
+**Project docs** (read the one that matches the task; don't load them all):
 
-The work for this project is done in the directory `05-final-project/` of the `ai-dev-tools` repository (originally `03-test-containerize-and-deploy-an-ai-assisted-app/`; moved for the course final project). The Git information is located in the parent directory, the repository root. 
+| Topic | File |
+|---|---|
+| Product spec: scope, data model, requirements, deployment design | `_docs/specs.md` |
+| API contract (source of truth) | `openapi.yaml` |
+| Agent team, roles and hand-offs | `docs/agent-team.md` |
+| How the agent was directed, and its past mistakes | `docs/ai-workflow.md` |
+| What each agent tool may do | `docs/permissions.md` |
+| Tests and CI | `docs/testing.md` |
+| AWS architecture and server operations | `docs/deployment.md` |
+| Release process, production approval, rollback | `docs/release-process.md` |
+| Monitoring, alert, incident responder, incidents | `observability/README.md`, `incident-response/README.md`, `docs/operations-and-security-report.md` |
+| Security audits and finding dispositions | `security-audit/audit-brief.md` |
 
-For homework assignment 3 of the AI Dev Tools course, we containerise and deploy the mini Kanban board (also referred to as 'this software project'). This is an end-to-end application built with an AI agent that includes a Node.js frontend, a Python backend, and a database. The database used in development will be SQLite. We must be able to switch to PostgreSQL in production.
+**Working rules** (from the owner):
 
-Homework details: https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/blob/main/03-deployment/01-test-containerize-and-deploy-an-ai-assisted-app.md
-
------
-
-The specification for this software project will be developed in an interactive TUI session. Please save the completed specification to `_docs/specs.md` . 
-
-The homework details are found at ai-dev-tools-zoomcamp/cohorts/2026/02-development/homework.md at main · DataTalksClub/ai-dev-tools-zoomcamp · GitHub , which was updated on 09 September 2026 around 14:30. However, instructions in this AGENTS.md fill will take precidence. For example, the .gitignore file and .git folder are in the parent directory, not in this directory.
-
-** IMPORTANT ** This application will be developed in a stepwise fashion, not all at once. Please commit changed and modified files to the repository, the push to the remote repository (GitHub.com), after each completed step. The main steps are as follows:
-
-1. Integration tests (`tests/integration/`) — exercise a real database, cover migrations, authentication, and frontend-to-backend workflows, fast enough to run on every push
-2. Containerization — multi-stage `Dockerfile` and `docker-compose.yml`, swapping SQLite for Postgres
-3. Continuous integration — `.github/workflows/ci.yml` (lint, unit tests, integration tests as merge gates)
-4. Deployment — public URL (Render, Fly.io, Railway, or Cloud Run), managed database, automatic migrations
-5. Continuous delivery — `.github/workflows/deploy.yml`, staging vs. production environments, post-deploy smoke tests, documented rollback procedures
-
-Expected deliverables by the end of this assignment: `tests/integration/`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`, `docs/testing.md`, `docs/deployment.md`, `docs/release-process.md`. The app must be reproducible locally from the README.
-
------
-
-** Additional Instructions **
-1. Continue to maintain the README.md file, 
-2. The README.md file should be verbose, as well as include the tech stack, installation instructions, and operation instructions.
-3. Continue to make note of challenges encountered in the README.md file
-
-
+- Git lives one level up: the repository root is `../` (`ai-dev-tools`);
+  this app is the `05-final-project/` folder. Workflows are in
+  `../.github/workflows/`.
+- Work in small steps. Commit and push after each completed step, on a
+  branch, through a pull request. `main` is protected; only the owner merges.
+- Keep `README.md` current and verbose: tech stack, installation and
+  operating instructions. Record anything non-obvious you run into under
+  README *Challenges & Notes*.
+- These instructions take precedence over the course's published homework
+  pages where the two differ.

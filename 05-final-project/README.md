@@ -2,54 +2,97 @@
 
 A mini Kanban board for tracking personal tasks across three stages — **To Do**, **In Progress**, and **Done** — styled after the ["living paper"](https://shannonware.com) design language: an old computer-manual look built from index cards on aged paper.
 
-This is the **final project** for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course ([project criteria](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project)). It grew out of the course homework: the app was built in homework 2, tested, containerized and deployed in homework 3, and given an agent extension pack in Module 5. Everything now lives in this folder (`05-final-project/`, formerly `03-test-containerize-and-deploy-an-ai-assisted-app/`). The entire application — spec, frontend, backend, database, deployment infrastructure and agent tooling — is built end-to-end with an AI coding agent (Claude Code), in stepwise fashion, with each step reviewed and merged through a pull request.
+This is the **final project** for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course ([project criteria](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project)). The whole application (spec, frontend, backend, database, tests, containers, deployment, monitoring and the on-call agent) was built with an AI coding agent, Claude Code, in small steps, each reviewed and merged through a pull request. It grew out of the course homework: built in homework 2, tested, containerized and deployed in homework 3, given agent tooling in Module 5, and monitored with an on-call agent for the final project.
 
-How the agent was directed, reviewed and checked, including its mistakes, is written up in [`docs/ai-workflow.md`](./docs/ai-workflow.md).
+- **Live:** https://cards.terzotech.net (production) and https://staging.cards.terzotech.net (staging). Both are behind the owner's password, so a visitor sees the login page; to use the board yourself, run it locally with `make up` and choose your own password.
+- **Task tracker:** [GitHub Issues](https://github.com/spycebot/ai-dev-tools/issues?q=is%3Aissue), each with acceptance criteria.
+- **Spec:** [`_docs/specs.md`](./_docs/specs.md). **Agent team:** [`docs/agent-team.md`](./docs/agent-team.md). **Agent instructions:** [`AGENTS.md`](./AGENTS.md).
 
-Security is audited with Semgrep, dependency checks, model review and a human decision on every finding; see [`security-audit/audit-brief.md`](./security-audit/audit-brief.md). The same scans run in CI on every push.
+## The problem
 
-Production is monitored with OpenTelemetry, Prometheus, Loki, Tempo and Grafana, and a 5xx alert pages an incident responder that can roll staging back on its own (prod only with the owner's approval). One real incident, from alert to verified recovery, is written up in [`docs/operations-and-security-report.md`](./docs/operations-and-security-report.md).
+Personal tasks end up scattered across notes, emails and memory, with no
+single view of what is waiting, what is in progress and what is finished.
+Full project-management tools solve that for teams, but for one person they
+bring accounts, workspaces, permissions and settings that get in the way.
 
-The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) — §1–9 cover the app itself (carried over from homework 2), §10–11 cover the homework 3 deployment architecture. Read that document for complete functional requirements, the data model, and deployment design details — this README focuses on what the app is, how it's built, and how to run it.
+Card Catalog is the smallest tool that fixes this for **one person**: a
+private board with three fixed columns, on the web, from any device.
 
-## Status
+**What it does, and how it should behave** (full detail in
+[`_docs/specs.md`](./_docs/specs.md) §5):
 
-**Homework 2 (app build) — all five stages complete:** spec → frontend prototype → backend (FastAPI, mock store) → connected frontend/backend → SQLite via SQLAlchemy. The app is a working full stack: a React board → a FastAPI service → a SQLAlchemy-backed SQLite database. **Both servers must be running locally** (see [Running the App](#running-the-app)).
+- The board shows **To Do**, **In Progress** and **Done** side by side, each with a live card count.
+- A card has a title (required), description, due date and priority. Cards are created in a column and appended at the bottom.
+- Clicking a card edits it. Deleting asks for confirmation and can't be undone.
+- Cards are dragged between columns and reordered within one; the new order is saved immediately.
+- A card past its due date that isn't in Done is flagged as overdue.
+- Everything persists in a database across reloads and restarts.
+- The board is private: one shared password, no sign-up. Without a valid session the API answers `401`.
 
-**Homework 3 (test, containerize, deploy) — in progress:**
+**Out of scope, on purpose:** multiple users or boards, custom columns,
+search, labels beyond priority, archiving, real-time sync between tabs
+(spec §2 and §9).
 
-- [x] **1. Deployment spec** — target platform (AWS: ECS Fargate, RDS Postgres, ECR, GitHub Actions OIDC), environments, secrets, migrations, and CI/CD strategy decided; see [`_docs/specs.md`](./_docs/specs.md) §10–11
-- [x] **2. Integration tests** — `backend/tests/integration/` against a real, ephemeral Postgres database (schema via Alembic); see [`docs/testing.md`](./docs/testing.md)
-- [x] **3. Containerization** — multi-stage `Dockerfile` (one image serves API + built frontend), `docker-compose.yml` (Postgres 17 + one-shot Alembic `migrate` service + app); see [Running with Docker](#running-with-docker)
-- [x] **4. Continuous integration** — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (repo root): lint + frontend build, unit tests, integration tests on Postgres 17, container build + Compose smoke test; see [`docs/testing.md`](./docs/testing.md#ci)
-- [x] **5. Deployment** — live at **https://cards.terzotech.net** (staging: **https://staging.cards.terzotech.net**): Docker Compose on AWS EC2 behind Caddy (Let's Encrypt), managed **RDS PostgreSQL 17**, migrations before every switch; see [`docs/deployment.md`](./docs/deployment.md)
-- [x] **6. Continuous delivery** — [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml): merge to `main` → CI → image to GHCR → staging → **manual approval** → production, each with migrations, a server-side and an outside smoke test, and automatic rollback; deploys run through AWS Systems Manager with GitHub OIDC (no stored AWS keys). See [`docs/release-process.md`](./docs/release-process.md)
+## Quick start
 
-## Feature Summary
+Only [Docker](https://docs.docker.com/get-docker/) with the Compose plugin
+and `make` are needed:
 
-- Single user, gated by one shared password (see [Authentication](#authentication) below), one board, three fixed columns (no custom columns).
-- Cards have a title (required), description, due date, and priority (low/medium/high).
-- Create, edit, and delete cards (delete requires confirmation — no undo).
-- Drag-and-drop to move cards between columns and to reorder cards within a column.
-- Column headers show a live card count.
-- Cards past their due date (and not in Done) are visually flagged as overdue.
+```bash
+git clone https://github.com/spycebot/ai-dev-tools.git
+cd ai-dev-tools/05-final-project
 
-See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
+make up      # first run asks for a login password (writes .env), then starts
+             # Postgres → migrations → app: http://localhost:8000
+make test    # every test: backend unit + integration on PostgreSQL 17, frontend, lint
+make down    # stop (data kept; `make clean` deletes it)
+```
+
+Without `make`, the same steps are in [Running with Docker](#running-with-docker)
+and [Running Tests](#running-tests). For development with hot reload, see
+[Running the App](#running-the-app).
+
+## For reviewers: criteria → evidence
+
+| Criterion | Where to look |
+|---|---|
+| Problem description | [The problem](#the-problem) above |
+| Product specification | [`_docs/specs.md`](./_docs/specs.md); tracker: [GitHub Issues](https://github.com/spycebot/ai-dev-tools/issues?q=is%3Aissue) with acceptance criteria. Delivered work before the tracker existed is recorded in issues #30–#46 (marked as recorded afterwards); later work starts from an issue and the PR closes it ("Team and process" in [`AGENTS.md`](./AGENTS.md)) |
+| Agent team | [`docs/agent-team.md`](./docs/agent-team.md): owner, builder, `api-reviewer` subagent, MCP ops tools, incident responder; responsibilities, permissions and hand-offs |
+| Context management | [`AGENTS.md`](./AGENTS.md) (loaded through [`CLAUDE.md`](./CLAUDE.md)) describes the project and indexes the modular docs in [`docs/`](./docs/) |
+| Application | React → FastAPI → SQLAlchemy → PostgreSQL (SQLite in native dev). One command: `make up` |
+| Testing | 98 backend tests (89 unit, 9 integration on a real PostgreSQL 17) and 44 frontend tests. One command: `make test`. See [`docs/testing.md`](./docs/testing.md) |
+| Containerization | [`Dockerfile`](./Dockerfile) (multi-stage) and [`docker-compose.yml`](./docker-compose.yml): `db` → `migrate` → `app`, started by `make up` / `docker compose up --build` |
+| Deployment | https://cards.terzotech.net and https://staging.cards.terzotech.net on AWS (EC2, RDS PostgreSQL 17, Caddy with Let's Encrypt); [`docs/deployment.md`](./docs/deployment.md) |
+| CI/CD | [`ci.yml`](../.github/workflows/ci.yml) on every PR (lint, unit, integration, container, security scans); [`deploy.yml`](../.github/workflows/deploy.yml) deploys staging automatically, then waits for the owner's **manual approval** before production; smoke tests and automatic rollback. [`docs/release-process.md`](./docs/release-process.md) |
+| Observability | OpenTelemetry metrics, traces and logs sharing a trace ID → Prometheus, Tempo, Loki → Grafana; [`observability/README.md`](./observability/README.md). No card content, password or session cookie reaches telemetry (`backend/tests/test_telemetry.py` checks this) |
+| Alerting on user impact | A 5xx-rate alert on user requests: [`observability/alerts.yaml`](./observability/alerts.yaml) |
+| On-call agent | The alert wakes [`incident-response/`](./incident-response/): evidence → read-only agent → policy → rollback → verify → record. A real incident, alert to verified recovery in about 4 minutes, is in [`docs/operations-and-security-report.md`](./docs/operations-and-security-report.md) |
+
+Also: how the agent was directed, including its mistakes, is in
+[`docs/ai-workflow.md`](./docs/ai-workflow.md), and security audits with a
+human decision on every finding are in
+[`security-audit/audit-brief.md`](./security-audit/audit-brief.md).
 
 ## Tech Stack
 
 | Layer            | Choice                                            | Notes                                                                 |
 |-------------------|----------------------------------------------------|------------------------------------------------------------------------|
-| Frontend          | React + Vite (Node.js)                            | Drag-and-drop via a library such as `@dnd-kit`.                        |
+| Frontend          | React + Vite (Node.js)                            | Drag-and-drop with `@dnd-kit`.                                         |
 | Backend           | Python + FastAPI, managed with `uv`               | Tests written before implementation.                                  |
 | API contract      | `openapi.yaml`                                    | Source of truth between frontend and backend.                         |
 | Database (dev)    | SQLite                                             | Accessed through SQLAlchemy so the backend stays database-agnostic. `Base.metadata.create_all` builds the schema — dev/test convenience only. |
-| Database (production target) | PostgreSQL (AWS RDS)                   | Schema built by **Alembic** migrations (`backend/migrations/`), not `create_all` — see [`_docs/specs.md`](./_docs/specs.md) §10. |
+| Database (Compose, staging, production) | PostgreSQL 17 (AWS RDS in production) | Schema built by **Alembic** migrations (`backend/migrations/`), not `create_all` — see [`_docs/specs.md`](./_docs/specs.md) §10. |
 | Styling           | Custom CSS ("living paper" theme)                 | Special Elite (body) and Share Tech Mono (data/labels) fonts, aged-paper CSS background, blueprint blue (`#18385a`) and annotation amber (`#7a5c0a`) accent colors. |
 | Authentication    | Single shared password, `bcrypt` + signed session cookie | No user table — one owner, one password. See [Authentication](#authentication). |
 | Testing (integration) | `pytest-postgresql`                            | Real Postgres, ephemeral per-session cluster — no Docker. See [`docs/testing.md`](./docs/testing.md). |
 | Testing (frontend) | Vitest + React Testing Library (jsdom)        | `npm test`; `fetch` stubbed per test. See [Running Tests](#running-tests). |
 | Containers        | Docker (multi-stage build) + Docker Compose        | One image: Node builds the frontend, uv installs backend deps, a slim `python:3.13` runtime serves both. Compose runs it on Postgres 17. |
+| CI/CD             | GitHub Actions                                    | `ci.yml` on every PR; `deploy.yml`: GHCR image → staging → manual approval → production, through AWS SSM with OIDC (no stored keys). |
+| Hosting           | AWS EC2 + RDS, Caddy                              | Caddy terminates HTTPS (Let's Encrypt) and routes the two hostnames. |
+| Observability     | OpenTelemetry (FastAPI native), Prometheus, Loki, Tempo, Grafana | Started on demand with `observability/obs.sh up`. |
+| On-call agent     | Claude Code headless (`claude -p`) + a Python policy | `incident-response/`; the model proposes, `policy.py` decides. |
+| Agent tooling     | Claude Code, MCP server, subagent, skill, hook    | See [`docs/agent-team.md`](./docs/agent-team.md). |
 
 ## Project Structure
 
@@ -65,6 +108,8 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── incident-response/ # Alert → evidence → read-only agent → policy → rollback → verify; incident records
 ├── security-audit/    # Semgrep + dependency + model-review audits: brief, schema, runs/, capability table, AI tool policy
 ├── README.md          # This file
+├── Makefile           # make up / test / down / dev: one command each
+├── Dockerfile.test    # Test images for `make test` (Postgres 17 + uv; Node)
 ├── openapi.yaml       # REST contract between frontend and backend (source of truth)
 ├── Dockerfile         # Multi-stage build: frontend → backend deps → slim runtime serving both
 ├── docker-compose.yml # Local stack on Postgres: db + migrate (alembic upgrade head) + app
@@ -73,7 +118,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 ├── deploy/            # What runs on the EC2 host (/srv/card-catalog/)
 │   ├── docker-compose.server.yml  # Caddy + prod + staging containers
 │   ├── Caddyfile                  # HTTPS + hostname routing
-│   ├── deploy.sh                  # verify image → migrate → switch → smoke test → auto-rollback
+│   ├── deploy.sh                  # verify image → migrate → switch → smoke tests → auto-rollback
 │   ├── smoke.sh                   # post-deploy smoke test
 │   ├── ssm-run.sh                 # GitHub Actions → SSM → deploy.sh on the host
 │   └── set-password.sh            # set/rotate the login password (hash only)
@@ -108,7 +153,8 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
     │   ├── env.py               # Points at app.db.Base.metadata + DATABASE_URL
     │   └── versions/             # e.g. create_cards_table
     ├── scripts/
-    │   └── set_password.py    # Generate/rotate the shared password's bcrypt hash
+    │   ├── set_password.py    # Generate/rotate the shared password's bcrypt hash (--env-file writes it)
+    │   └── smoke_write.py     # Staging write smoke test: create, move, delete a card
     ├── app/
     │   ├── main.py            # FastAPI app + routes (create_app factory)
     │   ├── auth.py             # Password check, session cookies, rate limiting
@@ -168,7 +214,12 @@ lockout (see `app/auth.py`), to slow down anyone guessing at the password.
 
 ## Running the App
 
-The app needs **both** servers running: the FastAPI backend and the Vite dev
+The quickest way to run everything is `make up` (Docker, see
+[Quick start](#quick-start)). This section is the **native development**
+setup, with hot reload. `make dev` starts both servers below in one
+terminal (after the [Authentication](#authentication) setup).
+
+In development there are two servers: the FastAPI backend and the Vite dev
 server. The frontend calls a relative `/api/*` path; Vite proxies that to the
 backend (`vite.config.js`), so the browser only ever makes same-origin requests
 and there is no CORS to configure — which also means the session cookie just
@@ -210,14 +261,23 @@ that serves the API under `/api` *and* the built frontend at `/`, against
 (with the Compose plugin) is needed — no Node, Python or uv on the host.
 
 ```bash
-cp .env.example .env
-# Generate the password hash + secret key (needs uv; or run it anywhere and copy the output):
-cd backend && uv run python scripts/set_password.py && cd ..
-# Paste both lines into .env. Keep AUTH_PASSWORD_HASH in SINGLE quotes —
-# the bcrypt hash is full of `$` that Compose would otherwise try to expand.
+make up                          # http://localhost:8000
+```
 
+On the first run `make up` builds the image, asks for a login password
+(inside the container, not echoed), and writes `.env` with the bcrypt hash
+and a fresh session key. Without `make`:
+
+```bash
+cp .env.example .env
+docker build -t card-catalog:local .
+docker run --rm -it --user "$(id -u):$(id -g)" -v "$PWD/.env:/tmp/app.env" \
+  card-catalog:local python scripts/set_password.py --env-file /tmp/app.env
 docker compose up --build        # http://localhost:8000
 ```
+
+(`set_password.py` single-quotes the hash in `.env`: it is full of `$`,
+which Compose would otherwise try to expand.)
 
 What happens on `up`:
 
@@ -262,31 +322,40 @@ dialect-specific, so:
 # default (dev)
 uv run uvicorn app.main:app                    # sqlite:///./card_catalog.db
 
-# point at PostgreSQL later — no application code changes
-uv add "psycopg[binary]"
+# PostgreSQL — no application code changes (psycopg is already a dependency)
 DATABASE_URL="postgresql+psycopg://user:pass@localhost/card_catalog" uv run uvicorn app.main:app
 ```
 
-Tables are created automatically on startup (`Base.metadata.create_all`); there
-is no migration tool yet (Alembic would be the next step if the schema starts
-changing). The board's column/position rules live in one place —
+On PostgreSQL the schema is built by **Alembic** migrations
+(`backend/migrations/`): the `migrate` service in Compose and every deploy
+run `alembic upgrade head` before the app starts. For local SQLite the app
+also calls `Base.metadata.create_all` on startup, a dev convenience that is
+a no-op on a migrated database. The board's column/position rules live in one place —
 `app/board.py` — which both stores call, so they can't drift apart.
 
 ## Running Tests
 
 **Backend** — the endpoints were built test-first (see [`_docs/specs.md`](./_docs/specs.md) §8). Full detail, including how the integration suite provisions Postgres, is in [`docs/testing.md`](./docs/testing.md):
 
+**All tests with one command:** `make test` builds two test images and runs
+every backend test (unit and integration, on a throwaway PostgreSQL 17
+cluster) and every frontend test, plus lint. Only Docker is needed.
+
+Natively (`make test-local` runs all of these):
+
 ```bash
 cd backend
-uv run pytest                        # everything — 85 tests, ~8s, no setup required
-uv run pytest -m "not integration"   # unit/store tests only
-uv run pytest -m integration         # integration tests only
+uv run pytest                        # everything: 98 tests (89 unit, 9 integration), ~10 s
+uv run pytest -m "not integration"   # unit/store tests only, no setup required
+uv run pytest -m integration         # integration tests only: needs PostgreSQL 17's binaries (docs/testing.md)
 ```
 
 - `tests/test_cards.py` — create/read/update/delete/move behaviour and validation. **Parametrized over both stores**, so every case runs against the in-memory store *and* a throwaway in-memory SQLite database; if they ever disagree, the suite fails.
 - `tests/test_persistence.py` — data survives a fresh store on the same file; seeding only happens once.
 - `tests/test_openapi.py` — `openapi.yaml` and the live app expose exactly the same set of operations.
 - `tests/test_auth.py` — login/logout/session, cookie tampering, and rate limiting. Card tests log in with a fixed test password (see `conftest.py`); these tests exercise the logged-out state directly.
+- `tests/test_telemetry.py` — the metrics, spans and ERROR logs the alert and the responder rely on, and that no card content, password or session cookie reaches telemetry.
+- `tests/test_set_password.py` — how `set_password.py --env-file` writes `.env`.
 - `tests/test_smoke_write.py` — the staging write smoke test (`scripts/smoke_write.py`) passes on the real app, catches the 2026-10-22 game-day regression, and always deletes its card.
 - `tests/integration/` — the same kinds of workflows (migrations, auth, card CRUD/move) but against a **real, ephemeral PostgreSQL cluster** with the schema built by Alembic, not SQLite. See [`docs/testing.md`](./docs/testing.md) for how that database is provisioned without Docker and without touching this machine's other databases.
 
@@ -326,8 +395,10 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **GitHub's immutable OIDC subject broke the AWS role trust.** The first deploys failed with `Not authorized to perform sts:AssumeRoleWithWebIdentity`. The trust policy matched the usual `repo:spycebot/ai-dev-tools:environment:staging` subject, but this repository sends the immutable form with numeric IDs: `repo:spycebot@8616624/ai-dev-tools@1354510999:environment:staging`. `gh api repos/<owner>/<repo>/actions/oidc/customization/sub` shows which form a repo uses. A second attempt still failed because the hand-edited policy had picked up an extra `/ai-dev-tools`. A deploy step that prints the token's non-secret claims (`sub`, `aud`, `iss`) made the mismatch visible, and it stays in the workflow. See [`docs/deployment.md`](./docs/deployment.md#how-github-actions-reaches-the-server).
 - **Two SSM limits found on the first real deploy.** `send-command`'s `--comment` is capped at 100 characters, and including the full image reference went over it. `AWS-RunShellScript` also runs commands with `/bin/sh`, which is dash on Ubuntu, so `set -o pipefail` stopped the script on its first line. The comment is now short, and the remote script is plain POSIX `sh` (`set -eu`); `deploy.sh` itself still runs under bash.
 - **The smoke test can trip the login rate limiter.** Each smoke test sends one deliberately wrong password. A few deploys and rollbacks within five minutes would hit the 5-failures-per-IP lockout, and the endpoint would answer `429` instead of `401`. `smoke.sh` accepts either; both prove the auth path is working.
-- **Git lives one level up.** This project's `.git` repository and `.gitignore` live in the parent directory (`/var/www/terzotech.net/ai-dev-tools/`), not in this folder. All git operations (status, add, commit, push) for this project are run from, or relative to, that parent directory rather than from `02-ai-assisted-full-stack-app/` itself.
+- **Git lives one level up.** This project's `.git` repository and `.gitignore` live in the repository root (`ai-dev-tools/`), not in this folder, and GitHub only reads workflows from the root's `.github/workflows/`. Git commands for this project run from, or relative to, that root.
 - **AGENTS.md takes precedence over the published homework instructions** where the two differ (for example, the homework assumes `.gitignore`/`.git` live inside the project folder — here they live in the parent repo instead).
+- **The task tracker came late.** Until 2026-10-24 work was planned in `_docs/specs.md`, `AGENTS.md` and pull requests, not in an issue tracker. The delivered features were then recorded as GitHub issues #30–#46, each marked as recorded afterwards, with its acceptance criteria and the PR that met them; new work starts from an issue.
+- **`make` and `npm` aren't on the EC2 host.** `make test` was checked by running its recipes directly and dry-running the Makefile with GNU make in an Alpine container; its test images bring their own Node.js and PostgreSQL 17, so the host needs only Docker.
 - **Spec-first workflow.** Before any code was written, the product specification was developed interactively (feature scope, data model, interaction choices, and the app name "Card Catalog" were all decided through a Q&A session) and captured in `_docs/specs.md`, per the course's spec-first methodology.
 - **Mocked backend is one module, by design.** `frontend/src/api/cards.js` is the single seam between the UI and "the backend." Every function returns a `Promise` and mirrors what a real REST call will look like, so stage 4 (connecting to FastAPI) should only require rewriting that one file, not the components that call it.
 - **Stage 4 held that line — mostly.** Swapping `cards.js` from `localStorage` to `fetch` needed no component changes: the mock had deliberately used the same field names (`due_date`, `column`, …) and return shapes as the API. The only other edits were additive: a `/api` proxy in `vite.config.js`, and wrapping the create/update/delete/move handlers in `App.jsx` (plus `CardEditor`'s submit) in `try/catch` so a backend error now shows in the board's error banner instead of becoming an unhandled promise rejection.
@@ -349,4 +420,4 @@ Notes on anything non-obvious encountered while building this project, kept up t
 
 ## Course Context
 
-Built for [Homework 2: Build and Ship an AI-Assisted Full-Stack App](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/blob/main/cohorts/2026/02-development/homework.md) of the AI Dev Tools Zoomcamp.
+The final project of the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) 2026 ([criteria](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project)). It started as [Homework 2: Build and Ship an AI-Assisted Full-Stack App](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/blob/main/cohorts/2026/02-development/homework.md) and was extended in homework 3 (test, containerize, deploy), Module 4 (operations) and Module 5 (agent tooling).
