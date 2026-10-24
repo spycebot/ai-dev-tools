@@ -43,6 +43,19 @@ and subagent in `mcp-server/` and `.claude/agents/` are read-only / test-only by
 design — see `docs/permissions.md` before granting
 either more than that.
 
+**Team and process**: who does what (owner, builder, `api-reviewer`
+subagent, MCP ops tools, incident responder) and how work passes between
+them is in `docs/agent-team.md`. Work is tracked in GitHub Issues
+(https://github.com/spycebot/ai-dev-tools/issues):
+
+- Start from an issue. If there isn't one, create it (`gh issue create`)
+  with a goal and acceptance criteria as a checklist, and confirm the scope
+  with the owner before writing code.
+- Read it first: `gh issue view <n>`.
+- One branch per issue. The PR description says `Closes #<n>` and states
+  how each acceptance criterion was checked; merging closes the issue.
+- Follow-ups found along the way become new issues, not scope creep.
+
 -----
 
 The work for this project is done in the directory `05-final-project/` of the `ai-dev-tools` repository (originally `03-test-containerize-and-deploy-an-ai-assisted-app/`; moved for the course final project). The Git information is located in the parent directory, the repository root. 

@@ -15,6 +15,11 @@ here can be checked in the Git history, the pull requests, or the README's
 
 ## The roles
 
+The full team, including the subagent, the MCP tools and the incident
+responder, and how work moves between them, is in
+[`agent-team.md`](./agent-team.md). Work is tracked in
+[GitHub Issues](https://github.com/spycebot/ai-dev-tools/issues).
+
 | | The developer | The agent |
 |---|---|---|
 | **Decides** | What to build and in what order; architecture trade-offs (AWS vs. a PaaS, EC2 + RDS vs. ECS, SSM vs. SSH); domain names; when a step is done | How to implement a decided step; which tests prove it; how to explain it |

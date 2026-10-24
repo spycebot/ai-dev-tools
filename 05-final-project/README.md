@@ -81,6 +81,7 @@ See [`_docs/specs.md`](./_docs/specs.md) for full detail on each of these.
 │   └── specs.md       # Full product specification (app in §1-9, deployment in §10-11)
 ├── docs/
 │   ├── ai-workflow.md  # How the AI agent was used, reviewed and verified (and where it went wrong)
+│   ├── agent-team.md   # The agent team: members, permissions, and how work moves between them
 │   ├── testing.md      # Test suite structure + why Postgres is provisioned the way it is
 │   ├── deployment.md   # AWS architecture, server layout, operations, rebuild steps, cost
 │   ├── release-process.md  # PR → CI → staging → production, smoke tests, rollback, migrations policy
