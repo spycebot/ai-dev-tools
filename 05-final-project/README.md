@@ -23,7 +23,7 @@ The full product specification lives at [`_docs/specs.md`](./_docs/specs.md) —
 - [x] **3. Containerization** — multi-stage `Dockerfile` (one image serves API + built frontend), `docker-compose.yml` (Postgres 17 + one-shot Alembic `migrate` service + app); see [Running with Docker](#running-with-docker)
 - [x] **4. Continuous integration** — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (repo root): lint + frontend build, unit tests, integration tests on Postgres 17, container build + Compose smoke test; see [`docs/testing.md`](./docs/testing.md#ci)
 - [x] **5. Deployment** — live at **https://cards.terzotech.net** (staging: **https://staging.cards.terzotech.net**): Docker Compose on AWS EC2 behind Caddy (Let's Encrypt), managed **RDS PostgreSQL 17**, migrations before every switch; see [`docs/deployment.md`](./docs/deployment.md)
-- [x] **6. Continuous delivery** — [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml): merge to `main` → CI → image to GHCR → staging → production, each with migrations, a server-side and an outside smoke test, and automatic rollback; deploys run through AWS Systems Manager with GitHub OIDC (no stored AWS keys). See [`docs/release-process.md`](./docs/release-process.md)
+- [x] **6. Continuous delivery** — [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml): merge to `main` → CI → image to GHCR → staging → **manual approval** → production, each with migrations, a server-side and an outside smoke test, and automatic rollback; deploys run through AWS Systems Manager with GitHub OIDC (no stored AWS keys). See [`docs/release-process.md`](./docs/release-process.md)
 
 ## Feature Summary
 

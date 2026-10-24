@@ -1,8 +1,10 @@
 # Release process
 
 Every change reaches production the same way: a pull request, green CI, a
-merge to `main`, then an automatic staging → production rollout with smoke
-tests and automatic rollback. Nobody deploys by hand in the normal case.
+merge to `main`, an automatic deploy to staging, then a **manual approval**
+before the same image goes to production. Both deploys run smoke tests and
+roll themselves back on failure. Nobody runs a deploy by hand: the only
+manual step is the owner's click on "Approve and deploy".
 
 ## The path of a change
 
@@ -16,6 +18,9 @@ branch ──► pull request ──► CI (4 required checks) ──► merge t
                                      ▼
    staging:     verify ─► migrate ─► switch ─► smoke (server) ─► write smoke ─► smoke (outside)
                    any failure ⇒ automatic rollback, production never starts
+                                     │
+                                     ▼
+   approval:    the owner reviews staging, then approves the production job
                                      │
                                      ▼
    production:  verify ─► migrate ─► switch ─► smoke (server) ─► smoke (outside)
@@ -49,7 +54,31 @@ branch ──► pull request ──► CI (4 required checks) ──► merge t
    4. the job then runs `smoke.sh` again from the GitHub runner, from outside
       AWS, against the public URL.
 
-   Production only starts after staging has passed both smoke tests.
+   Production only starts after staging has passed both smoke tests **and**
+   the owner has approved it (next section).
+
+## Manual approval for production
+
+The `production` GitHub environment has a **required reviewer** (the owner,
+`spycebot`), and only protected branches (`main`) may deploy to it. When
+staging is green, the deploy run stops at the `production` job with
+*Waiting for review*:
+
+1. Open **Actions → Deploy → the run**, or the link in GitHub's notification.
+2. Check https://staging.cards.terzotech.net: it now runs the new image.
+3. Click **Review deployments**, tick `production`, then **Approve and
+   deploy** (or **Reject**, which ends the run and leaves production alone).
+
+GitHub waits up to 30 days for a decision. The approval is recorded in the
+run and in the environment's deployment history, so every production
+release shows who let it through and when. The AWS role trusts the
+`production` environment only, so the gate can't be skipped by calling AWS
+from another job.
+
+Manual **rollbacks** of production from the Actions tab
+(below) wait for the same approval. The incident responder doesn't use the
+workflow: it rolls back on the host and asks for approval itself
+([`incident-response/`](../incident-response/), autonomy level 1 for prod).
 
 ## Smoke test
 
@@ -118,7 +147,7 @@ next step.
 ### Manual
 
 From GitHub: **Actions → Deploy → Run workflow**, choose `rollback` and the
-environment. Or, on the server:
+environment (production asks for approval first). Or, on the server:
 
 ```bash
 cd /srv/card-catalog
@@ -163,5 +192,5 @@ and `staging.env` on the host:
 - [ ] Migration is additive or backward compatible (see above)
 - [ ] `alembic upgrade head` tested locally on Postgres (`docker compose up` runs it)
 - [ ] Integration tests cover the new schema
-- [ ] After merge, staging deploy green before production starts
+- [ ] After merge, staging deploy green before approving production
 - [ ] Spot-check the feature on https://staging.cards.terzotech.net
