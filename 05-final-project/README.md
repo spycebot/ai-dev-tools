@@ -169,9 +169,11 @@ human decision on every finding are in
         └── integration/        # Real-Postgres suite — migrations, auth, card workflows
 ```
 
-## Installation
+## Installation (native development)
 
-**Frontend** (needs Node.js):
+Not needed for `make up` / `make test`, which only need Docker.
+
+**Frontend** (needs Node.js 22):
 
 ```bash
 cd frontend
@@ -373,6 +375,58 @@ npm run test:watch    # re-run on save
 - `src/App.test.jsx` — the whole app against a stubbed backend: session check, login, the board loading in order, create, delete (and a failed delete), an expired session, and logout.
 
 Dragging itself isn't simulated (dnd-kit's pointer sensors don't run in jsdom); the decisions it triggers are tested through `planMove`/`applyMove`.
+
+## Deployment and operations
+
+**Where it runs.** AWS `eu-north-1`: one EC2 instance runs Caddy (HTTPS
+with Let's Encrypt) plus a `prod` and a `staging` app container; RDS
+PostgreSQL 17 holds one database and login role per environment. Details,
+costs and rebuild steps: [`docs/deployment.md`](./docs/deployment.md).
+
+**CI.** Every pull request runs [`ci.yml`](../.github/workflows/ci.yml):
+lint and frontend tests, backend unit tests, integration tests on
+PostgreSQL 17, an image build with a Compose smoke test, and security scans
+(Semgrep, dependency audit). The first four are required to merge.
+
+**CD.** Merging to `main` runs [`deploy.yml`](../.github/workflows/deploy.yml):
+
+1. CI again on the merge commit, then one image `ghcr.io/spycebot/card-catalog:<sha>`.
+2. **Staging**, automatically: verify the image, `alembic upgrade head`,
+   switch, smoke tests on the server and from outside, and a write smoke
+   test (create, move, delete a card). Any failure rolls back.
+3. **Production waits for the owner's approval** (a required reviewer on
+   the `production` GitHub environment), then the same steps.
+
+Rollback: automatic on a failed smoke test, or **Actions → Deploy → Run
+workflow → rollback**, or `./deploy.sh rollback prod` on the server. See
+[`docs/release-process.md`](./docs/release-process.md).
+
+**Monitoring and alerting.** The app exports OpenTelemetry metrics, traces
+and logs (sharing a trace ID) when the monitoring stack is up:
+
+```bash
+observability/obs.sh up      # Collector, Prometheus, Loki, Tempo, Grafana (localhost only)
+observability/obs.sh down
+```
+
+A Grafana alert fires on any 5xx response to a user request
+([`observability/alerts.yaml`](./observability/alerts.yaml)). See
+[`observability/README.md`](./observability/README.md).
+
+**On-call agent.** The alert's webhook wakes the incident responder, which
+collects evidence, asks a read-only `claude -p` agent for a diagnosis and a
+proposal, and lets [`policy.py`](./incident-response/policy.py) decide:
+staging is rolled back and verified automatically, production waits for
+`approve.sh`. Every incident is recorded in
+[`incident-response/incidents/`](./incident-response/incidents/).
+
+```bash
+cd incident-response
+uv run --no-project --with pyyaml --with jsonschema python responder.py serve
+```
+
+The game day of 2026-10-22, from a broken deploy to verified recovery, is
+written up in [`docs/operations-and-security-report.md`](./docs/operations-and-security-report.md).
 
 ## Challenges & Notes
 
