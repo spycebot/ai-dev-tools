@@ -4,7 +4,7 @@ A mini Kanban board for tracking personal tasks across three stages — **To Do*
 
 This is the **final project** for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course ([project criteria](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project)). The whole application (spec, frontend, backend, database, tests, containers, deployment, monitoring and the on-call agent) was built with an AI coding agent, Claude Code, in small steps, each reviewed and merged through a pull request. It grew out of the course homework: built in homework 2, tested, containerized and deployed in homework 3, given agent tooling in Module 5, and monitored with an on-call agent for the final project.
 
-- **Live:** https://cards.terzotech.net (production) and https://staging.cards.terzotech.net (staging). Both are behind the owner's password, so a visitor sees the login page; to use the board yourself, run it locally with `make up` and choose your own password.
+- **Live demo:** https://staging.cards.terzotech.net, password **`card-catalog-demo`** (see [For reviewers](#for-reviewers-criteria--evidence)). Production, https://cards.terzotech.net, runs the same build with the owner's private password.
 - **Task tracker:** [GitHub Issues](https://github.com/spycebot/ai-dev-tools/issues?q=is%3Aissue), each with acceptance criteria.
 - **Spec:** [`_docs/specs.md`](./_docs/specs.md). **Agent team:** [`docs/agent-team.md`](./docs/agent-team.md). **Agent instructions:** [`AGENTS.md`](./AGENTS.md).
 
@@ -54,6 +54,27 @@ and [Running Tests](#running-tests). For development with hot reload, see
 
 ## For reviewers: criteria → evidence
 
+### Three ways to see it working
+
+1. **Use the live demo.** Open https://staging.cards.terzotech.net and log
+   in with **`card-catalog-demo`**. This is the staging environment: the
+   same image production runs, deployed through the same pipeline. Create,
+   edit, drag and delete cards as you like; the board **resets to the four
+   sample cards every night at 03:17 UTC**
+   ([`demo-reset.yml`](../.github/workflows/demo-reset.yml)), so you can't
+   break anything. Production (https://cards.terzotech.net) holds the
+   owner's real cards and keeps a private password. Five wrong passwords
+   from one IP lock that IP out for up to five minutes.
+2. **Watch the demo video:** VIDEO_LINK_PENDING (about 2 minutes):
+   login, cards, drag and drop, persistence, the production approval in
+   GitHub Actions, and the monitoring and incident record, which the live
+   site can't show you.
+3. **Run it yourself.** With Docker and `make`: `make up`, choose any
+   password, open http://localhost:8000. `make test` runs every test. See
+   [Quick start](#quick-start).
+
+### Criteria
+
 | Criterion | Where to look |
 |---|---|
 | Problem description | [The problem](#the-problem) above |
@@ -61,7 +82,7 @@ and [Running Tests](#running-tests). For development with hot reload, see
 | Agent team | [`docs/agent-team.md`](./docs/agent-team.md): owner, builder, `api-reviewer` subagent, MCP ops tools, incident responder; responsibilities, permissions and hand-offs |
 | Context management | [`AGENTS.md`](./AGENTS.md) (loaded through [`CLAUDE.md`](./CLAUDE.md)) describes the project and indexes the modular docs in [`docs/`](./docs/) |
 | Application | React → FastAPI → SQLAlchemy → PostgreSQL (SQLite in native dev). One command: `make up` |
-| Testing | 98 backend tests (89 unit, 9 integration on a real PostgreSQL 17) and 44 frontend tests. One command: `make test`. See [`docs/testing.md`](./docs/testing.md) |
+| Testing | 103 backend tests (94 unit, 9 integration on a real PostgreSQL 17) and 44 frontend tests. One command: `make test`. See [`docs/testing.md`](./docs/testing.md) |
 | Containerization | [`Dockerfile`](./Dockerfile) (multi-stage) and [`docker-compose.yml`](./docker-compose.yml): `db` → `migrate` → `app`, started by `make up` / `docker compose up --build` |
 | Deployment | https://cards.terzotech.net and https://staging.cards.terzotech.net on AWS (EC2, RDS PostgreSQL 17, Caddy with Let's Encrypt); [`docs/deployment.md`](./docs/deployment.md) |
 | CI/CD | [`ci.yml`](../.github/workflows/ci.yml) on every PR (lint, unit, integration, container, security scans); [`deploy.yml`](../.github/workflows/deploy.yml) deploys staging automatically, then waits for the owner's **manual approval** before production; smoke tests and automatic rollback. [`docs/release-process.md`](./docs/release-process.md) |
@@ -154,7 +175,8 @@ human decision on every finding are in
     │   └── versions/             # e.g. create_cards_table
     ├── scripts/
     │   ├── set_password.py    # Generate/rotate the shared password's bcrypt hash (--env-file writes it)
-    │   └── smoke_write.py     # Staging write smoke test: create, move, delete a card
+    │   ├── smoke_write.py     # Staging write smoke test: create, move, delete a card
+    │   └── reset_demo.py      # Nightly reset of the public staging demo to the seed cards
     ├── app/
     │   ├── main.py            # FastAPI app + routes (create_app factory)
     │   ├── auth.py             # Password check, session cookies, rate limiting
@@ -347,7 +369,7 @@ Natively (`make test-local` runs all of these):
 
 ```bash
 cd backend
-uv run pytest                        # everything: 98 tests (89 unit, 9 integration), ~10 s
+uv run pytest                        # everything: 103 tests (94 unit, 9 integration), ~10 s
 uv run pytest -m "not integration"   # unit/store tests only, no setup required
 uv run pytest -m integration         # integration tests only: needs PostgreSQL 17's binaries (docs/testing.md)
 ```
@@ -358,6 +380,7 @@ uv run pytest -m integration         # integration tests only: needs PostgreSQL 
 - `tests/test_auth.py` — login/logout/session, cookie tampering, and rate limiting. Card tests log in with a fixed test password (see `conftest.py`); these tests exercise the logged-out state directly.
 - `tests/test_telemetry.py` — the metrics, spans and ERROR logs the alert and the responder rely on, and that no card content, password or session cookie reaches telemetry.
 - `tests/test_set_password.py` — how `set_password.py --env-file` writes `.env`.
+- `tests/test_reset_demo.py` — the nightly demo reset restores exactly the seed cards and refuses to run outside the staging container.
 - `tests/test_smoke_write.py` — the staging write smoke test (`scripts/smoke_write.py`) passes on the real app, catches the 2026-10-22 game-day regression, and always deletes its card.
 - `tests/integration/` — the same kinds of workflows (migrations, auth, card CRUD/move) but against a **real, ephemeral PostgreSQL cluster** with the schema built by Alembic, not SQLite. See [`docs/testing.md`](./docs/testing.md) for how that database is provisioned without Docker and without touching this machine's other databases.
 

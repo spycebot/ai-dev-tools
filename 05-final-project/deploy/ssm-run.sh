@@ -3,6 +3,7 @@
 #
 #   ssm-run.sh <commit-sha> deploy   <staging|prod> <image>
 #   ssm-run.sh <commit-sha> rollback <staging|prod>
+#   ssm-run.sh <commit-sha> reset-demo staging
 #
 # Needs AWS credentials (deploy.yml gets short-lived ones via OIDC) and
 # INSTANCE_ID in the environment. The remote side first syncs the deploy/

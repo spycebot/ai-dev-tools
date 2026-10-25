@@ -21,7 +21,7 @@ make up                                              # whole stack in Docker on 
 make test                                            # every test in Docker (backend unit + integration, frontend, lint)
 cd backend && uv run uvicorn app.main:app --reload   # backend, :8000
 cd frontend && npm run dev                           # frontend, :5173
-cd backend && uv run pytest                           # full backend suite (98 tests)
+cd backend && uv run pytest                           # full backend suite (103 tests)
 cd backend && uv run pytest -m "not integration"      # unit/store only, no Postgres
 cd backend && uv run pytest -m integration            # integration only (needs postgresql-17's initdb/postgres on PATH)
 cd frontend && npm run lint                           # oxlint
