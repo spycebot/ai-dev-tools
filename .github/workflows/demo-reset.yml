@@ -1,0 +1,50 @@
+# Nightly reset of the public staging demo.
+#
+# Staging doubles as the reviewers' demo with a published password (see
+# 05-final-project/README.md, "For reviewers"), so anyone can change its
+# board. Once a day this puts it back to the four seed cards:
+# deploy.sh reset-demo staging → scripts/reset_demo.py in the staging
+# container. Production is never touched: this job can only use the
+# `staging` environment, deploy.sh refuses any other, and the script checks
+# it's in the staging container.
+
+name: Demo reset
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # 03:17 UTC daily
+  workflow_dispatch:
+
+# Its own group: sharing `deploy` would let a queued reset cancel a queued
+# deploy. A reset that overlaps a staging deploy at worst fails, and the
+# next night's run repairs the board.
+concurrency:
+  group: demo-reset
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  APP_DIR: 05-final-project
+  AWS_REGION: eu-north-1
+  AWS_ROLE: arn:aws:iam::755400271585:role/card-catalog-github-deploy
+  INSTANCE_ID: i-03608727285d00358
+
+jobs:
+  reset:
+    runs-on: ubuntu-24.04
+    environment:
+      name: staging
+      url: https://staging.cards.terzotech.net
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Reset the staging board to the seed cards
+        run: ${{ env.APP_DIR }}/deploy/ssm-run.sh ${{ github.sha }} reset-demo staging

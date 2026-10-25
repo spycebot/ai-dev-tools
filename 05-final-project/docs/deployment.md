@@ -75,6 +75,7 @@ short-lived GitHub OIDC token, then asks AWS Systems Manager (SSM) to run
 | IAM role | `card-catalog-github-deploy`; permissions: `ssm:SendCommand` on this one instance with the `AWS-RunShellScript` document, plus `ssm:GetCommandInvocation` / `ListCommandInvocations` |
 | EC2 instance role | `card-catalog-ec2` includes `AmazonSSMManagedInstanceCore`, so the SSM agent can receive commands |
 | GitHub environments | `staging`, `production`, both restricted to protected branches (`main`); `production` also has a required reviewer (the owner), so production deploys wait for manual approval |
+| Public demo | Staging is the reviewers' demo, with a published password (README). `.github/workflows/demo-reset.yml` resets its board to the seed cards nightly (`deploy.sh reset-demo staging`); production is never reset |
 
 The role's trust policy only accepts tokens from this repository's two
 environments. **This repository uses GitHub's immutable OIDC subject**, which

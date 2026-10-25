@@ -29,7 +29,7 @@ uv run pytest -m "not integration"   # unit/store tests only — no Postgres nee
 uv run pytest -m integration         # integration tests only
 ```
 
-The backend suite is 98 tests (89 unit, 9 integration) and runs in about 10 seconds locally,
+The backend suite is 103 tests (94 unit, 9 integration) and runs in about 10 seconds locally,
 including the Postgres cluster boot — fast enough to run on every push, per
 the homework requirement.
 
@@ -38,7 +38,8 @@ the homework requirement.
 Card CRUD, board rules (`app/board.py`), auth (login/logout/session/rate
 limiting), persistence, the `openapi.yaml` contract, the telemetry the 5xx
 alert depends on (and that no card content or credentials reach it), the
-`.env` writer behind `make up`, and the staging write smoke test (`scripts/smoke_write.py`). Every card/board
+`.env` writer behind `make up`, the nightly reset of the public staging demo
+(`scripts/reset_demo.py`), and the staging write smoke test (`scripts/smoke_write.py`). Every card/board
 test is **parametrized over both `CardStore` implementations** —
 `InMemoryCardStore` and `SqlAlchemyCardStore` on a throwaway in-memory
 SQLite database — so if the two stores ever disagree on behavior, the suite

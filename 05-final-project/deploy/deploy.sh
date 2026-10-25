@@ -6,6 +6,7 @@
 #   deploy.sh rollback <staging|prod>           switch back to the previous image
 #   deploy.sh verify   <image>                  only the image check below
 #   deploy.sh status                            show what each environment runs
+#   deploy.sh reset-demo staging                reset the public demo board to the seed cards
 #
 # Runs in /srv/card-catalog (see docker-compose.server.yml). images.env keeps
 # the current and previous image for each environment, so a rollback is a
@@ -120,10 +121,16 @@ case $cmd in
   verify)
     verify_image "${2:?image}"
     ;;
+  reset-demo)
+    # Staging is the reviewers' public demo (README); demo-reset.yml runs this
+    # nightly. Never prod: it deletes every card.
+    [[ ${2:-} == staging ]] || { echo "reset-demo only runs on staging" >&2; exit 2; }
+    "${COMPOSE[@]}" exec -T staging python -m scripts.reset_demo
+    ;;
   status)
     cat images.env
     "${COMPOSE[@]}" ps
     ;;
   *)
-    sed -n '2,8p' "$0"; exit 2 ;;
+    sed -n '2,9p' "$0"; exit 2 ;;
 esac
