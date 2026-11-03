@@ -2,6 +2,8 @@
 
 A mini Kanban board for tracking personal tasks across three stages — **To Do**, **In Progress**, and **Done** — styled after the ["living paper"](https://shannonware.com) design language: an old computer-manual look built from index cards on aged paper.
 
+Project video: [https://www.youtube.com/watch?v=xQFln_L_PuU](https://www.youtube.com/watch?v=xQFln_L_PuU)
+
 This is the **final project** for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course ([project criteria](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project)). The whole application (spec, frontend, backend, database, tests, containers, deployment, monitoring and the on-call agent) was built with an AI coding agent, Claude Code, in small steps, each reviewed and merged through a pull request. It grew out of the course homework: built in homework 2, tested, containerized and deployed in homework 3, given agent tooling in Module 5, and monitored with an on-call agent for the final project.
 
 - **Live:** https://cards.terzotech.net (production) and https://staging.cards.terzotech.net (staging). Both are behind the owner's password, so a visitor sees the login page; to use the board yourself, run it locally with `make up` and choose your own password.
