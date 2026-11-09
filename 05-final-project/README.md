@@ -6,7 +6,7 @@ Project video: [https://www.youtube.com/watch?v=xQFln_L_PuU](https://www.youtube
 
 This is the **final project** for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course ([project criteria](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project)). The whole application (spec, frontend, backend, database, tests, containers, deployment, monitoring and the on-call agent) was built with an AI coding agent, Claude Code, in small steps, each reviewed and merged through a pull request. It grew out of the course homework: built in homework 2, tested, containerized and deployed in homework 3, given agent tooling in Module 5, and monitored with an on-call agent for the final project.
 
-- **Live:** https://cards.terzotech.net (production) and https://staging.cards.terzotech.net (staging). Both are behind the owner's password, so a visitor sees the login page; to use the board yourself, run it locally with `make up` and choose your own password.
+- **Live demo:** https://staging.cards.terzotech.net, open to everyone with no password; it resets to the sample cards every night (see [For reviewers](#for-reviewers-criteria--evidence)). Production, https://cards.terzotech.net, runs the same build with the owner's private password.
 - **Task tracker:** [GitHub Issues](https://github.com/spycebot/ai-dev-tools/issues?q=is%3Aissue), each with acceptance criteria.
 - **Spec:** [`_docs/specs.md`](./_docs/specs.md). **Agent team:** [`docs/agent-team.md`](./docs/agent-team.md). **Agent instructions:** [`AGENTS.md`](./AGENTS.md).
 
@@ -29,7 +29,7 @@ private board with three fixed columns, on the web, from any device.
 - Cards are dragged between columns and reordered within one; the new order is saved immediately.
 - A card past its due date that isn't in Done is flagged as overdue.
 - Everything persists in a database across reloads and restarts.
-- The board is private: one shared password, no sign-up. Without a valid session the API answers `401`.
+- The board is private: one shared password, no sign-up. Without a valid session the API answers `401`. A deployment can switch the password off (`AUTH_REQUIRED=false`); the public demo does.
 
 **Out of scope, on purpose:** multiple users or boards, custom columns,
 search, labels beyond priority, archiving, real-time sync between tabs
@@ -56,6 +56,28 @@ and [Running Tests](#running-tests). For development with hot reload, see
 
 ## For reviewers: criteria → evidence
 
+### Three ways to see it working
+
+1. **Use the live demo.** Open https://staging.cards.terzotech.net; there
+   is no password. This is the staging environment: the same image
+   production runs, deployed through the same pipeline, with the login
+   switched off (`AUTH_REQUIRED=false`). Create, edit, drag and delete
+   cards as you like; the board **resets to the four sample cards every
+   night at 03:17 UTC**
+   ([`demo-reset.yml`](../.github/workflows/demo-reset.yml)), so you can't
+   break anything. Production (https://cards.terzotech.net) holds the
+   owner's real cards and keeps its password; the login screen there is
+   the one the app shows whenever a password is configured.
+2. **Watch the demo video:** https://www.youtube.com/watch?v=xQFln_L_PuU:
+   cards, drag and drop, persistence, the production approval in GitHub
+   Actions, and the monitoring and incident record, which the live site
+   can't show you.
+3. **Run it yourself.** With Docker and `make`: `make up`, choose any
+   password, open http://localhost:8000. `make test` runs every test. See
+   [Quick start](#quick-start).
+
+### Criteria
+
 | Criterion | Where to look |
 |---|---|
 | Problem description | [The problem](#the-problem) above |
@@ -63,7 +85,7 @@ and [Running Tests](#running-tests). For development with hot reload, see
 | Agent team | [`docs/agent-team.md`](./docs/agent-team.md): owner, builder, `api-reviewer` subagent, MCP ops tools, incident responder; responsibilities, permissions and hand-offs |
 | Context management | [`AGENTS.md`](./AGENTS.md) (loaded through [`CLAUDE.md`](./CLAUDE.md)) describes the project and indexes the modular docs in [`docs/`](./docs/) |
 | Application | React → FastAPI → SQLAlchemy → PostgreSQL (SQLite in native dev). One command: `make up` |
-| Testing | 98 backend tests (89 unit, 9 integration on a real PostgreSQL 17) and 44 frontend tests. One command: `make test`. See [`docs/testing.md`](./docs/testing.md) |
+| Testing | 111 backend tests (102 unit, 9 integration on a real PostgreSQL 17) and 46 frontend tests. One command: `make test`. See [`docs/testing.md`](./docs/testing.md) |
 | Containerization | [`Dockerfile`](./Dockerfile) (multi-stage) and [`docker-compose.yml`](./docker-compose.yml): `db` → `migrate` → `app`, started by `make up` / `docker compose up --build` |
 | Deployment | https://cards.terzotech.net and https://staging.cards.terzotech.net on AWS (EC2, RDS PostgreSQL 17, Caddy with Let's Encrypt); [`docs/deployment.md`](./docs/deployment.md) |
 | CI/CD | [`ci.yml`](../.github/workflows/ci.yml) on every PR (lint, unit, integration, container, security scans); [`deploy.yml`](../.github/workflows/deploy.yml) deploys staging automatically, then waits for the owner's **manual approval** before production; smoke tests and automatic rollback. [`docs/release-process.md`](./docs/release-process.md) |
@@ -156,7 +178,8 @@ human decision on every finding are in
     │   └── versions/             # e.g. create_cards_table
     ├── scripts/
     │   ├── set_password.py    # Generate/rotate the shared password's bcrypt hash (--env-file writes it)
-    │   └── smoke_write.py     # Staging write smoke test: create, move, delete a card
+    │   ├── smoke_write.py     # Staging write smoke test: create, move, delete a card
+    │   └── reset_demo.py      # Nightly reset of the public staging demo to the seed cards
     ├── app/
     │   ├── main.py            # FastAPI app + routes (create_app factory)
     │   ├── auth.py             # Password check, session cookies, rate limiting
@@ -215,6 +238,16 @@ password is a config edit, not a feature to build and maintain.
 
 A handful of failed login attempts from the same IP triggers a short
 lockout (see `app/auth.py`), to slow down anyone guessing at the password.
+
+**Running without a password.** Set `AUTH_REQUIRED=false` and the gate is
+off: every request counts as logged in, the login screen and the *Log out*
+button disappear, and `AUTH_PASSWORD_HASH`/`AUTH_SECRET_KEY` aren't needed.
+`GET /api/session` reports `"auth_required": false` so the frontend knows.
+The public staging demo runs this way (set in
+`deploy/docker-compose.server.yml`), and its board is reset to the seed
+cards every night, which is the defence against defacement. Production
+never sets it, and its smoke test fails the deploy if its API ever answers
+without a session.
 
 ## Running the App
 
@@ -349,7 +382,7 @@ Natively (`make test-local` runs all of these):
 
 ```bash
 cd backend
-uv run pytest                        # everything: 98 tests (89 unit, 9 integration), ~10 s
+uv run pytest                        # everything: 111 tests (102 unit, 9 integration), ~10 s
 uv run pytest -m "not integration"   # unit/store tests only, no setup required
 uv run pytest -m integration         # integration tests only: needs PostgreSQL 17's binaries (docs/testing.md)
 ```
@@ -357,9 +390,10 @@ uv run pytest -m integration         # integration tests only: needs PostgreSQL 
 - `tests/test_cards.py` — create/read/update/delete/move behaviour and validation. **Parametrized over both stores**, so every case runs against the in-memory store *and* a throwaway in-memory SQLite database; if they ever disagree, the suite fails.
 - `tests/test_persistence.py` — data survives a fresh store on the same file; seeding only happens once.
 - `tests/test_openapi.py` — `openapi.yaml` and the live app expose exactly the same set of operations.
-- `tests/test_auth.py` — login/logout/session, cookie tampering, and rate limiting. Card tests log in with a fixed test password (see `conftest.py`); these tests exercise the logged-out state directly.
+- `tests/test_auth.py` — login/logout/session, cookie tampering, rate limiting, and the password-free mode (`AUTH_REQUIRED=false`). Card tests log in with a fixed test password (see `conftest.py`); these tests exercise the logged-out state directly.
 - `tests/test_telemetry.py` — the metrics, spans and ERROR logs the alert and the responder rely on, and that no card content, password or session cookie reaches telemetry.
 - `tests/test_set_password.py` — how `set_password.py --env-file` writes `.env`.
+- `tests/test_reset_demo.py` — the nightly demo reset restores exactly the seed cards and refuses to run outside the staging container.
 - `tests/test_smoke_write.py` — the staging write smoke test (`scripts/smoke_write.py`) passes on the real app, catches the 2026-10-22 game-day regression, and always deletes its card.
 - `tests/integration/` — the same kinds of workflows (migrations, auth, card CRUD/move) but against a **real, ephemeral PostgreSQL cluster** with the schema built by Alembic, not SQLite. See [`docs/testing.md`](./docs/testing.md) for how that database is provisioned without Docker and without touching this machine's other databases.
 
@@ -374,7 +408,7 @@ npm run test:watch    # re-run on save
 - `src/board.test.js` — the pure board logic in `src/board.js`: grouping cards into columns, where a drag-and-drop lands (`planMove`), and the optimistic board update (`applyMove`).
 - `src/api/cards.test.js`, `src/api/auth.test.js` — the API clients: URLs, methods and bodies sent, the session cookie, error messages (FastAPI `detail`, validation lists, no-body and network failures), and the 401 → back-to-login hook.
 - `src/components/*.test.jsx` — the card editor (validation, trimming, create vs. edit, staying open on failure), the login form, and a card (overdue flag with a frozen clock, delete confirmation).
-- `src/App.test.jsx` — the whole app against a stubbed backend: session check, login, the board loading in order, create, delete (and a failed delete), an expired session, and logout.
+- `src/App.test.jsx` — the whole app against a stubbed backend: session check, login, the board loading in order, create, delete (and a failed delete), an expired session, logout, and a deployment without a password.
 
 Dragging itself isn't simulated (dnd-kit's pointer sensors don't run in jsdom); the decisions it triggers are tested through `planMove`/`applyMove`.
 
@@ -450,6 +484,7 @@ Notes on anything non-obvious encountered while building this project, kept up t
 - **Deploying without opening SSH to the internet.** GitHub-hosted runners come from thousands of changing IP addresses, and the instance only allows SSH from the owner's IP. Rather than opening port 22 to everyone or running a self-hosted runner on a public repo (GitHub warns that pull requests from forks could run code on it), the deploy jobs log into AWS through GitHub's OIDC provider and run `deploy.sh` via **AWS Systems Manager** `send-command`. The IAM role trusts only this repo's `staging` and `production` GitHub environments, and can only send commands to the one app instance.
 - **GitHub's immutable OIDC subject broke the AWS role trust.** The first deploys failed with `Not authorized to perform sts:AssumeRoleWithWebIdentity`. The trust policy matched the usual `repo:spycebot/ai-dev-tools:environment:staging` subject, but this repository sends the immutable form with numeric IDs: `repo:spycebot@8616624/ai-dev-tools@1354510999:environment:staging`. `gh api repos/<owner>/<repo>/actions/oidc/customization/sub` shows which form a repo uses. A second attempt still failed because the hand-edited policy had picked up an extra `/ai-dev-tools`. A deploy step that prints the token's non-secret claims (`sub`, `aud`, `iss`) made the mismatch visible, and it stays in the workflow. See [`docs/deployment.md`](./docs/deployment.md#how-github-actions-reaches-the-server).
 - **Two SSM limits found on the first real deploy.** `send-command`'s `--comment` is capped at 100 characters, and including the full image reference went over it. `AWS-RunShellScript` also runs commands with `/bin/sh`, which is dash on Ubuntu, so `set -o pipefail` stopped the script on its first line. The comment is now short, and the remote script is plain POSIX `sh` (`set -eu`); `deploy.sh` itself still runs under bash.
+- **A public demo has to be tested as public.** Turning the password off on staging meant the smoke test's "API refuses an unauthenticated request" check would fail every staging deploy. Rather than drop the check, `smoke.sh --public` asserts the opposite for staging (the API serves the board and `/api/session` says no password is needed), and without the flag an open API still fails, so production can't go public by accident. One consequence: rolling staging back to an image from before this change fails the public smoke test, because those images still ask for a password.
 - **The smoke test can trip the login rate limiter.** Each smoke test sends one deliberately wrong password. A few deploys and rollbacks within five minutes would hit the 5-failures-per-IP lockout, and the endpoint would answer `429` instead of `401`. `smoke.sh` accepts either; both prove the auth path is working.
 - **Git lives one level up.** This project's `.git` repository and `.gitignore` live in the repository root (`ai-dev-tools/`), not in this folder, and GitHub only reads workflows from the root's `.github/workflows/`. Git commands for this project run from, or relative to, that root.
 - **AGENTS.md takes precedence over the published homework instructions** where the two differ (for example, the homework assumes `.gitignore`/`.git` live inside the project folder — here they live in the parent repo instead).

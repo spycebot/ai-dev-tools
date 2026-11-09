@@ -22,6 +22,8 @@ export default function App() {
   // null while the initial session check is in flight; true/false after.
   const [authenticated, setAuthenticated] = useState(null);
   const [loginMessage, setLoginMessage] = useState(null);
+  // false on a deployment without a password: no Log out button then.
+  const [authRequired, setAuthRequired] = useState(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -37,7 +39,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    getSession().then(setAuthenticated);
+    getSession().then((session) => {
+      setAuthRequired(session.authRequired);
+      setAuthenticated(session.authenticated);
+    });
   }, []);
 
   useEffect(() => {
@@ -135,9 +140,11 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <button className="logout-button" onClick={handleLogout}>
-          Log out
-        </button>
+        {authRequired && (
+          <button className="logout-button" onClick={handleLogout}>
+            Log out
+          </button>
+        )}
         <h1>Card Catalog</h1>
         <p className="app-subtitle">a mini kanban board</p>
       </header>

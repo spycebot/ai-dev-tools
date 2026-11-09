@@ -49,7 +49,7 @@ def test_session_survives_a_fresh_connection_to_the_same_database(migrated_engin
     fresh_app_client = TestClient(create_app(store_b, auth_config=TEST_AUTH_CONFIG))
     fresh_app_client.cookies.set("cc_session", session_cookie)
 
-    assert fresh_app_client.get("/api/session").json() == {"authenticated": True}
+    assert fresh_app_client.get("/api/session").json()["authenticated"] is True
     assert fresh_app_client.get("/api/cards").status_code == 200
 
 

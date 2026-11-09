@@ -6,9 +6,10 @@ fixtures, since those start out logged in — the whole point here is to
 exercise the logged-out and login/logout transitions.
 """
 
+import pytest
 from fastapi.testclient import TestClient
 
-from app.auth import AuthConfig
+from app.auth import AuthConfig, default_auth_config
 from app.main import create_app
 from tests.conftest import TEST_AUTH_CONFIG, TEST_PASSWORD
 
@@ -46,10 +47,12 @@ def test_correct_password_logs_in_and_unlocks_cards(store):
 
 def test_session_endpoint_reflects_login_state(store):
     client = _client(store)
-    assert client.get("/api/session").json() == {"authenticated": False}
+    expected = {"authenticated": False, "auth_required": True}
+    assert client.get("/api/session").json() == expected
 
     client.post("/api/login", json={"password": TEST_PASSWORD})
-    assert client.get("/api/session").json() == {"authenticated": True}
+    expected["authenticated"] = True
+    assert client.get("/api/session").json() == expected
 
 
 def test_logout_clears_the_session(store):
@@ -103,3 +106,45 @@ def test_a_successful_login_resets_the_rate_limit(store):
     # immediately trip the limiter again.
     response = client.post("/api/login", json={"password": "wrong"})
     assert response.status_code == 401
+
+
+# --- AUTH_REQUIRED=false: the public staging demo ---
+
+
+def _open_client(store) -> TestClient:
+    return TestClient(create_app(store, auth_config=AuthConfig.open()))
+
+
+def test_open_mode_serves_cards_without_a_session(store):
+    client = _open_client(store)
+    assert client.get("/api/cards").status_code == 200
+    created = client.post("/api/cards", json={"title": "no password needed"})
+    assert created.status_code == 201
+
+
+def test_open_mode_session_reports_no_password(store):
+    assert _open_client(store).get("/api/session").json() == {
+        "authenticated": True,
+        "auth_required": False,
+    }
+
+
+def test_open_mode_login_succeeds_without_setting_a_cookie(store):
+    response = _open_client(store).post("/api/login", json={"password": "anything"})
+    assert response.status_code == 200
+    assert "cc_session" not in response.cookies
+
+
+def test_auth_required_false_needs_no_secrets(monkeypatch):
+    monkeypatch.setenv("AUTH_REQUIRED", "false")
+    monkeypatch.delenv("AUTH_PASSWORD_HASH", raising=False)
+    monkeypatch.delenv("AUTH_SECRET_KEY", raising=False)
+    assert default_auth_config().required is False
+
+
+def test_auth_is_required_by_default(monkeypatch):
+    monkeypatch.delenv("AUTH_REQUIRED", raising=False)
+    monkeypatch.delenv("AUTH_PASSWORD_HASH", raising=False)
+    monkeypatch.delenv("AUTH_SECRET_KEY", raising=False)
+    with pytest.raises(RuntimeError):
+        default_auth_config()

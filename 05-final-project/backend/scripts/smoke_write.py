@@ -9,7 +9,7 @@ passed it (docs/operations-and-security-report.md, audit F18).
 
 It signs its own session with the container's AUTH_SECRET_KEY, exactly as a
 login would, so no password is needed and the session token never leaves
-this process. It talks to the app on 127.0.0.1:8000, creates one card titled
+this process (with `AUTH_REQUIRED=false` it needs no session at all). It talks to the app on 127.0.0.1:8000, creates one card titled
 "smoke test", moves it to the end of two columns, and always deletes it
 again. Exits non-zero, with the failing step, on any unexpected response.
 Never run it against production: it writes to the board.
@@ -96,7 +96,8 @@ def http_request(base: str, token: str) -> Request:
 
 
 def main() -> int:
-    token = default_auth_config().make_session_token()
+    config = default_auth_config()
+    token = config.make_session_token() if config.required else ""
     try:
         for step in run(http_request("http://127.0.0.1:8000", token)):
             print(f"ok  {step}")

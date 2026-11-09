@@ -130,4 +130,15 @@ describe("App", () => {
     expect(await screen.findByLabelText("Password")).toBeInTheDocument();
     expect(calls.at(-1).url).toBe("/api/logout");
   });
+
+  it("opens straight onto the board, with no Log out, when no password is required", async () => {
+    stubFetch({
+      "GET /api/session": reply(200, { authenticated: true, auth_required: false }),
+      "GET /api/cards": reply(200, CARDS),
+    });
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "To Do" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Log out" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+  });
 });

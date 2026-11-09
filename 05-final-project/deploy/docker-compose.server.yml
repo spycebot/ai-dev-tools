@@ -6,6 +6,10 @@
 #   prod.env       production secrets: DATABASE_URL (RDS), AUTH_*   (chmod 600)
 #   staging.env    staging secrets, separate database and keys       (chmod 600)
 #
+# Staging is the public demo: AUTH_REQUIRED=false below turns its password
+# off (its AUTH_* values are then unused), and the "Demo reset" workflow puts
+# its board back to the seed cards every night. Production keeps its password.
+#
 # Telemetry: the app only exports OpenTelemetry data when observability.env
 # exists here; ../observability/obs.sh creates and removes it. The resource
 # attributes below tag every metric, log and trace with the environment and
@@ -51,6 +55,7 @@ services:
     environment:
       OTEL_SERVICE_NAME: card-catalog
       OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=staging,service.version=${STAGING_IMAGE}
+      AUTH_REQUIRED: "false"   # public demo, no password; never set this on prod
 
 volumes:
   caddy_data:
