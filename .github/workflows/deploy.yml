@@ -109,7 +109,7 @@ jobs:
         run: ${{ env.APP_DIR }}/deploy/ssm-run.sh ${{ github.sha }} deploy staging ${{ env.IMAGE }}:${{ github.sha }}
       - name: Smoke test from outside
         id: smoke
-        run: ${{ env.APP_DIR }}/deploy/smoke.sh https://staging.cards.terzotech.net
+        run: ${{ env.APP_DIR }}/deploy/smoke.sh https://staging.cards.terzotech.net --public
       - name: Roll back staging if the outside smoke test failed
         if: failure() && steps.smoke.outcome == 'failure'
         run: ${{ env.APP_DIR }}/deploy/ssm-run.sh ${{ github.sha }} rollback staging

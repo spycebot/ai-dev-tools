@@ -54,7 +54,12 @@ switch_to() { # <env> <image>
   return 1
 }
 
-smoke() { ./smoke.sh "https://$(host_for "$1")" --local; }
+# Staging is the password-free public demo (AUTH_REQUIRED=false in
+# docker-compose.server.yml); prod must still refuse a request without a session.
+smoke() {
+  if [[ $1 == staging ]]; then ./smoke.sh "https://$(host_for "$1")" --public --local
+  else ./smoke.sh "https://$(host_for "$1")" --local; fi
+}
 
 # Staging only: it writes (one card, deleted again). Not run on rollback,
 # because images from before this check don't contain the script.

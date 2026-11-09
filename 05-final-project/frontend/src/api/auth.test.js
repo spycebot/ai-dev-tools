@@ -19,17 +19,24 @@ describe("auth API client", () => {
   });
 
   it("reports the session state, treating any failure as logged out", async () => {
-    stubFetch({ "GET /api/session": reply(200, { authenticated: true }) });
-    await expect(getSession()).resolves.toBe(true);
+    const loggedIn = { authenticated: true, authRequired: true };
+    const loggedOut = { authenticated: false, authRequired: true };
+    stubFetch({ "GET /api/session": reply(200, { authenticated: true, auth_required: true }) });
+    await expect(getSession()).resolves.toEqual(loggedIn);
 
     stubFetch({ "GET /api/session": reply(200, { authenticated: false }) });
-    await expect(getSession()).resolves.toBe(false);
+    await expect(getSession()).resolves.toEqual(loggedOut);
 
     stubFetch({ "GET /api/session": reply(500) });
-    await expect(getSession()).resolves.toBe(false);
+    await expect(getSession()).resolves.toEqual(loggedOut);
 
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
-    await expect(getSession()).resolves.toBe(false);
+    await expect(getSession()).resolves.toEqual(loggedOut);
+  });
+
+  it("reports a deployment without a password", async () => {
+    stubFetch({ "GET /api/session": reply(200, { authenticated: true, auth_required: false }) });
+    await expect(getSession()).resolves.toEqual({ authenticated: true, authRequired: false });
   });
 
   it("never throws on logout, even offline", async () => {

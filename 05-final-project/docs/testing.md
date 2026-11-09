@@ -29,7 +29,7 @@ uv run pytest -m "not integration"   # unit/store tests only — no Postgres nee
 uv run pytest -m integration         # integration tests only
 ```
 
-The backend suite is 103 tests (94 unit, 9 integration) and runs in about 10 seconds locally,
+The backend suite is 111 tests (102 unit, 9 integration) and runs in about 10 seconds locally,
 including the Postgres cluster boot — fast enough to run on every push, per
 the homework requirement.
 
@@ -106,7 +106,7 @@ different bundled version.
 
 ```bash
 cd frontend
-npm test            # vitest run: 44 tests in jsdom, no backend needed
+npm test            # vitest run: 46 tests in jsdom, no backend needed
 ```
 
 Components render in jsdom with React Testing Library and are driven with

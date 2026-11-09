@@ -21,7 +21,7 @@ make up                                              # whole stack in Docker on 
 make test                                            # every test in Docker (backend unit + integration, frontend, lint)
 cd backend && uv run uvicorn app.main:app --reload   # backend, :8000
 cd frontend && npm run dev                           # frontend, :5173
-cd backend && uv run pytest                           # full backend suite (103 tests)
+cd backend && uv run pytest                           # full backend suite (111 tests)
 cd backend && uv run pytest -m "not integration"      # unit/store only, no Postgres
 cd backend && uv run pytest -m integration            # integration only (needs postgresql-17's initdb/postgres on PATH)
 cd frontend && npm run lint                           # oxlint
@@ -38,7 +38,8 @@ keeps the original field names. Card/board tests are parametrized over both
 
 **Security boundaries**: `AUTH_PASSWORD_HASH` and `AUTH_SECRET_KEY` live only
 in `backend/.env` (git-ignored), never in source or the database — the
-server refuses to start without them. Never print, log, or commit `.env`
+server refuses to start without them, unless `AUTH_REQUIRED=false` turns
+the password off (the public staging demo only; never production). Never print, log, or commit `.env`
 contents, `card_catalog.db`, or a real session cookie value. The MCP server
 and subagent in `mcp-server/` and `.claude/agents/` are read-only / test-only by
 design — see `docs/permissions.md` before granting

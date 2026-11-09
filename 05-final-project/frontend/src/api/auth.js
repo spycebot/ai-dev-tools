@@ -41,14 +41,23 @@ export async function logout() {
   }
 }
 
-/** Whether the current session cookie (if any) is still valid. */
+const LOGGED_OUT = { authenticated: false, authRequired: true };
+
+/**
+ * Whether the current session cookie (if any) is still valid, and whether
+ * this deployment asks for a password at all (the public staging demo
+ * doesn't). Any failure reads as logged out.
+ */
 export async function getSession() {
   try {
     const response = await fetch(SESSION_URL, { credentials: "same-origin" });
-    if (!response.ok) return false;
+    if (!response.ok) return LOGGED_OUT;
     const body = await response.json();
-    return Boolean(body.authenticated);
+    return {
+      authenticated: Boolean(body.authenticated),
+      authRequired: body.auth_required !== false,
+    };
   } catch {
-    return false;
+    return LOGGED_OUT;
   }
 }

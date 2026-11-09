@@ -44,6 +44,8 @@ paths:
       description: >
         On success, sets a signed, httpOnly session cookie. Rate-limited per
         client IP (a handful of attempts per few minutes) to slow brute force.
+        A deployment without a password (AUTH_REQUIRED=false) accepts any
+        password and sets no cookie.
       requestBody:
         required: true
         content:
@@ -82,7 +84,7 @@ paths:
         "200":
           description: >
             Session status. Never errors — an absent or invalid cookie just
-            reports authenticated false.
+            reports authenticated false. Includes auth_required.
           content:
             application/json:
               schema:
@@ -269,6 +271,12 @@ components:
       properties:
         authenticated:
           type: boolean
+        auth_required:
+          type: boolean
+          description: >
+            Only on GET /api/session. False when this deployment runs without
+            a password (AUTH_REQUIRED=false, the public staging demo); every
+            request then counts as authenticated.
       required: [authenticated]
     Priority:
       type: string

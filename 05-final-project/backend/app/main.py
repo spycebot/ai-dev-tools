@@ -6,7 +6,8 @@ with no store it lazily builds a SQLAlchemy store on the configured database
 (SQLite by default) — lazily, so merely importing this module touches no disk.
 
 The app is password-gated (see `app/auth.py`): every `/api/cards*` route
-requires a valid session cookie, obtained via `POST /api/login`. `create_app`
+requires a valid session cookie, obtained via `POST /api/login`, unless the
+deployment sets `AUTH_REQUIRED=false` (the public staging demo). `create_app`
 also accepts an `AuthConfig` so tests can use a fixed test password instead
 of real environment variables.
 
@@ -137,6 +138,8 @@ def create_app(
     @app.post("/api/login", tags=["auth"])
     def login(payload: LoginRequest, request: Request, response: Response) -> dict[str, bool]:
         auth = get_auth()
+        if not auth.required:
+            return {"authenticated": True}
         limiter = get_limiter()
         client_key = request.client.host if request.client else "unknown"
         if not limiter.allow(client_key):
@@ -170,7 +173,11 @@ def create_app(
     def session_status(
         session: str | None = Cookie(default=None, alias=COOKIE_NAME),
     ) -> dict[str, bool]:
-        return {"authenticated": get_auth().verify_session_token(session)}
+        auth = get_auth()
+        return {
+            "authenticated": auth.verify_session_token(session),
+            "auth_required": auth.required,
+        }
 
     # --- Cards: every route below requires a valid session ---
 

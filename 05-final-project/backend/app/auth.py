@@ -10,6 +10,11 @@ hash and rotate the password — see `.env.example`.
 `AuthConfig` is injectable into `create_app()` (mirrors how `CardStore` is
 injected) so tests can use a fixed, low-cost test password instead of
 requiring real environment variables.
+
+`AUTH_REQUIRED=false` turns the gate off for one deployment (`AuthConfig.open()`):
+every request counts as logged in and no AUTH_* secrets are needed. Staging
+runs this way as the public demo, which `scripts/reset_demo.py` puts back to
+the seed cards every night; production keeps its password.
 """
 
 from __future__ import annotations
@@ -42,6 +47,12 @@ class AuthConfig:
     cookie_secure: bool = True
     max_attempts: int = 5
     window_seconds: int = 300
+    required: bool = True
+
+    @classmethod
+    def open(cls) -> AuthConfig:
+        """No password: every request is treated as logged in."""
+        return cls(password_hash="", secret_key="", required=False)
 
     def verify_password(self, candidate: str) -> bool:
         return bcrypt.checkpw(
@@ -52,6 +63,8 @@ class AuthConfig:
         return self._serializer().dumps(_SESSION_PAYLOAD)
 
     def verify_session_token(self, token: str | None) -> bool:
+        if not self.required:
+            return True
         if not token:
             return False
         try:
@@ -67,13 +80,20 @@ class AuthConfig:
         return URLSafeTimedSerializer(self.secret_key, salt=_COOKIE_SALT)
 
 
+def _env_flag(name: str, default: str = "true") -> bool:
+    return os.environ.get(name, default).strip().lower() not in {"0", "false", "no"}
+
+
 def default_auth_config() -> AuthConfig:
     """Build an `AuthConfig` from the environment. Fails loudly if unset.
 
-    This app is password-gated by design — refusing to start without real
+    The app is password-gated unless a deployment opts out explicitly with
+    `AUTH_REQUIRED=false`; otherwise refusing to start without real
     credentials configured is the point, not an inconvenience. Tests inject
     their own `AuthConfig` instead of going through this function.
     """
+    if not _env_flag("AUTH_REQUIRED"):
+        return AuthConfig.open()
     password_hash = os.environ.get("AUTH_PASSWORD_HASH")
     secret_key = os.environ.get("AUTH_SECRET_KEY")
     if not password_hash or not secret_key:
@@ -82,15 +102,10 @@ def default_auth_config() -> AuthConfig:
             "app will start. Run `uv run python scripts/set_password.py` to "
             "generate both, then put them in backend/.env (see .env.example)."
         )
-    cookie_secure = os.environ.get("AUTH_COOKIE_SECURE", "true").strip().lower() not in {
-        "0",
-        "false",
-        "no",
-    }
     return AuthConfig(
         password_hash=password_hash,
         secret_key=secret_key,
-        cookie_secure=cookie_secure,
+        cookie_secure=_env_flag("AUTH_COOKIE_SECURE"),
     )
 
 
