@@ -19,7 +19,7 @@ name: card-catalog-obs
 
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.162.0@sha256:39923a8e431bd1f57be82411999d389fcfe40857492e4365456d97a4c1f74be6
+    image: otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
     command: ["--config=/etc/otelcol/config.yaml"]
     volumes:
       - ./collector.yaml:/etc/otelcol/config.yaml:ro
@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
 
   prometheus:
-    image: prom/prometheus:v3.15.0@sha256:efd719c99d83b060d9daefdcf00360461adf279f45ef5391f8d111892118753e
+    image: prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-otlp-receiver
@@ -41,14 +41,14 @@ services:
     restart: unless-stopped
 
   loki:
-    image: grafana/loki:3.7.8@sha256:1107dd5274e0ada47e42472b7a7e71f3b2a2fe878878108f3e2f9e51528f0193
+    image: grafana/loki:3.7.9@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28
     volumes:
       - loki:/loki
     mem_limit: 400m
     restart: unless-stopped
 
   tempo:
-    image: grafana/tempo:2.10.8@sha256:f0561deb1c68ec44d6e6e7e4487f30106c4e5e768642077695b37958b105812a
+    image: grafana/tempo:2.10.10@sha256:12b0820f13ffa10ce956b6e9acc3b03f3cffded99109be6cc09d106fe56e5d38
     command: ["-config.file=/etc/tempo.yaml"]
     volumes:
       - ./tempo.yaml:/etc/tempo.yaml:ro
@@ -57,7 +57,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:13.2.3@sha256:b28bae15e219c998fb0e0424ed724930cc61b1f61fb404d47c862f9a23f9e572
+    image: grafana/grafana:13.3.0@sha256:488984b716c0862639f91a698adbe2862677a5a07bad42da5f03f3030883b205
     ports:
       - "127.0.0.1:3000:3000"
     environment:
