@@ -6,7 +6,7 @@ Project video: [https://www.youtube.com/watch?v=xQFln_L_PuU](https://www.youtube
 
 This is the **final project** for the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) course ([project criteria](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/tree/main/project)). The whole application (spec, frontend, backend, database, tests, containers, deployment, monitoring and the on-call agent) was built with an AI coding agent, Claude Code, in small steps, each reviewed and merged through a pull request. It grew out of the course homework: built in homework 2, tested, containerized and deployed in homework 3, given agent tooling in Module 5, and monitored with an on-call agent for the final project.
 
-- **Live demo:** https://staging.cards.terzotech.net, open to everyone with no password; it resets to the sample cards every night (see [For reviewers](#for-reviewers-criteria--evidence)). Production, https://cards.terzotech.net, runs the same build with the owner's private password.
+- **Live sites retired (2026-11-27).** The course is finished and the AWS host has been shut down, so https://cards.terzotech.net and the public staging demo are offline. Watch the [project video](https://www.youtube.com/watch?v=xQFln_L_PuU), or run the whole app locally with `make up` (see [Quick start](#quick-start)). Everything needed to redeploy it is still here: [`docs/deployment.md`](./docs/deployment.md).
 - **Task tracker:** [GitHub Issues](https://github.com/spycebot/ai-dev-tools/issues?q=is%3Aissue), each with acceptance criteria.
 - **Spec:** [`_docs/specs.md`](./_docs/specs.md). **Agent team:** [`docs/agent-team.md`](./docs/agent-team.md). **Agent instructions:** [`AGENTS.md`](./AGENTS.md).
 
@@ -56,23 +56,18 @@ and [Running Tests](#running-tests). For development with hot reload, see
 
 ## For reviewers: criteria → evidence
 
-### Three ways to see it working
+### Two ways to see it working
 
-1. **Use the live demo.** Open https://staging.cards.terzotech.net; there
-   is no password. This is the staging environment: the same image
-   production runs, deployed through the same pipeline, with the login
-   switched off (`AUTH_REQUIRED=false`). Create, edit, drag and delete
-   cards as you like; the board **resets to the four sample cards every
-   night at 03:17 UTC**
-   ([`demo-reset.yml`](../.github/workflows/demo-reset.yml)), so you can't
-   break anything. Production (https://cards.terzotech.net) holds the
-   owner's real cards and keeps its password; the login screen there is
-   the one the app shows whenever a password is configured.
-2. **Watch the demo video:** https://www.youtube.com/watch?v=xQFln_L_PuU:
+The live sites ran from 7 October to 27 November 2026: production with a
+password, and staging as a public demo with no password
+(`AUTH_REQUIRED=false`), reset to the sample cards every night by
+[`demo-reset.yml`](../.github/workflows/demo-reset.yml). The AWS host has
+since been shut down, and the Deploy and Demo reset workflows are disabled.
+
+1. **Watch the demo video:** https://www.youtube.com/watch?v=xQFln_L_PuU:
    cards, drag and drop, persistence, the production approval in GitHub
-   Actions, and the monitoring and incident record, which the live site
-   can't show you.
-3. **Run it yourself.** With Docker and `make`: `make up`, choose any
+   Actions, and the monitoring and incident record.
+2. **Run it yourself.** With Docker and `make`: `make up`, choose any
    password, open http://localhost:8000. `make test` runs every test. See
    [Quick start](#quick-start).
 
@@ -87,7 +82,7 @@ and [Running Tests](#running-tests). For development with hot reload, see
 | Application | React → FastAPI → SQLAlchemy → PostgreSQL (SQLite in native dev). One command: `make up` |
 | Testing | 111 backend tests (102 unit, 9 integration on a real PostgreSQL 17) and 46 frontend tests. One command: `make test`. See [`docs/testing.md`](./docs/testing.md) |
 | Containerization | [`Dockerfile`](./Dockerfile) (multi-stage) and [`docker-compose.yml`](./docker-compose.yml): `db` → `migrate` → `app`, started by `make up` / `docker compose up --build` |
-| Deployment | https://cards.terzotech.net and https://staging.cards.terzotech.net on AWS (EC2, RDS PostgreSQL 17, Caddy with Let's Encrypt); [`docs/deployment.md`](./docs/deployment.md) |
+| Deployment | Ran at https://cards.terzotech.net and https://staging.cards.terzotech.net on AWS (EC2, RDS PostgreSQL 17, Caddy with Let's Encrypt) until 2026-11-27, now retired; [`docs/deployment.md`](./docs/deployment.md) |
 | CI/CD | [`ci.yml`](../.github/workflows/ci.yml) on every PR (lint, unit, integration, container, security scans); [`deploy.yml`](../.github/workflows/deploy.yml) deploys staging automatically, then waits for the owner's **manual approval** before production; smoke tests and automatic rollback. [`docs/release-process.md`](./docs/release-process.md) |
 | Observability | OpenTelemetry metrics, traces and logs sharing a trace ID → Prometheus, Tempo, Loki → Grafana; [`observability/README.md`](./observability/README.md). No card content, password or session cookie reaches telemetry (`backend/tests/test_telemetry.py` checks this) |
 | Alerting on user impact | A 5xx-rate alert on user requests: [`observability/alerts.yaml`](./observability/alerts.yaml) |

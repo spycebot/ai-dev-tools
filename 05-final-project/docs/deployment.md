@@ -1,5 +1,7 @@
 # Deployment
 
+> **Retired 2026-11-27.** The EC2 host and the RDS database were shut down after the course, and the Deploy and Demo reset workflows are disabled. This page describes the setup as it ran, which is enough to rebuild it.
+
 Card Catalog runs on AWS in `eu-north-1` (Stockholm), as two environments on
 one EC2 host, backed by one managed RDS PostgreSQL instance:
 
